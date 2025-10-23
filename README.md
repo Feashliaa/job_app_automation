@@ -40,4 +40,6 @@ Built with **Flask**, **Bootstrap**, and **Vanilla JavaScript**, the dashboard a
 **Deployment:**  
 - Planned support for **Docker** and **Azure Web App Services**
 
+<img width="2560" height="1408" alt="image" src="https://github.com/user-attachments/assets/63d8cfac-a539-4787-b3f3-58f796640a2e" />
+
 ---
