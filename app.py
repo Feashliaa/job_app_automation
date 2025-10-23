@@ -204,9 +204,9 @@ def get_jobs():
     
 if __name__ == "__main__":
     # Only for testing: drop existing tables - If actually using a persistent DB, remove this line
-    #Base.metadata.drop_all(bind=engine)
+    Base.metadata.drop_all(bind=engine)
 
     # Create tables based on models
-    #Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
 
     app.run(debug=True, host="0.0.0.0", port=5000)
