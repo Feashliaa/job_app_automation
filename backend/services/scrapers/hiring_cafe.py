@@ -1,5 +1,4 @@
-# backend/services/scraper.py
-# Original Scraping Function, only works with hiring cafe
+# backend/services/hiring_cafe.py
 import json
 import urllib.parse
 import time
@@ -11,10 +10,10 @@ from backend.services import utils
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from backend.services.scrapers.base_scraper import BaseScraper
 
-
-class Scraper:
-
+class HiringCafeScraper(BaseScraper):
+    
     BASE_URL = "https://hiring.cafe/"
 
     DATE_POSTED_MAP = {
@@ -36,15 +35,7 @@ class Scraper:
         "Frontend Developer": "frontend+developer",
         "Backend Developer": "backend+developer",
     }
-
-    def __init__(self):
-        self.driver = utils.create_driver()
-
-        # load env variables if needed
-        env_vars = utils.load_env_variables()
-        self.email_address = env_vars["EMAIL_ADDRESS"]
-        self.email_password = env_vars["EMAIL_PASSWORD"]
-
+    
     def _build_search_url(self, date_posted, experience_level, job_title, location):
         # Map inputs to values or provide fallbacks
         date_posted_val = self.DATE_POSTED_MAP.get(date_posted, 14)
@@ -68,45 +59,32 @@ class Scraper:
         encoded_state = urllib.parse.quote(json.dumps(search_state))
 
         return f"{self.BASE_URL}?searchState={encoded_state}"
-
-    def _go_to_url(self, url):  # used to navigate to a URL
-        self.driver.get(url)
-        time.sleep(random.uniform(2, 5)) # wait for page to load
-
+    
     def _scrape_logic(self, url, job_title, location, date_posted, experience_level):  # core scraping logic
         self._go_to_url(url)
 
         # Wait for job postings to load
-        WebDriverWait(self.driver, 30).until(
-            EC.presence_of_all_elements_located(
-                (By.CSS_SELECTOR, "div.relative.bg-white")
-            )
-        )
+        self._wait_for_elements("div.relative.bg-white")
 
         job_cards = self.driver.find_elements(By.CSS_SELECTOR, "div.relative.bg-white")
-
-        print(f"Found {len(job_cards)} job postings. Pausing for inspection...")
+        print(f"Found {len(job_cards)} job postings.")
 
         results = []
-
         for card in job_cards:
             try:
                 title = card.find_element(By.CSS_SELECTOR, "span.font-bold.text-start").text
             except:
                 title = "N/A"
-
             try:
                 company = card.find_element(By.CSS_SELECTOR, "span.line-clamp-3.font-light span.font-bold").text
                 # Remove trailing colon, e.g. "Navigant: " → "Navigant"
                 company = company.rstrip(":").strip()
             except:
                 company = "N/A"
-
             try:
                 link = card.find_element(By.CSS_SELECTOR, "a[href*='viewjob']").get_attribute("href")
             except:
                 link = "N/A"
-
             results.append(
                 {
                     "JobTitle": title,
@@ -129,35 +107,26 @@ class Scraper:
             print(f"- {job['JobTitle']} at {job['Company']} ({job['URL']})")
 
         return results
-
-    def close(self):  # close the driver
-        self.driver.quit()
-
-    def scrape(self, date_posted: str, experience_level: str, job_title: str, location: str):
-
+    
+    def scrape(self, date_posted, experience_level, job_title, location):
         print(
-            f"Scraping jobs for '{job_title}' in '{location}' "
-            f"with date_posted='{date_posted}' and experience_level='{experience_level}'..."
+            f"[Hiring Cafe] Scraping '{job_title}' in '{location}' "
+            f"({experience_level}, {date_posted})"
         )
 
         url = self._build_search_url(date_posted, experience_level, job_title, location)
-        print(f"[Hiring Cafe] Constructed URL: {url}")
+        print(f"[Hiring Cafe] URL: {url}")
 
-        scraped_jobs = self._scrape_logic(
-            url, job_title, location, date_posted, experience_level
-        )
+        results = self._scrape_logic(url, job_title, location, date_posted, experience_level)
 
-        # Mock fallback
-        if not scraped_jobs:
-            scraped_jobs = [
-                {
-                    "JobTitle": job_title,
-                    "Company": "Indeed Corp.",
-                    "Location": location,
-                    "URL": "https://indeed.com/viewjob?jk=abc123",
-                    "Status": "New",
-                    "DateFound": datetime.today().date().isoformat(),
-                }
-            ]
+        if not results:
+            results = [{
+                "JobTitle": job_title,
+                "Company": "Hiring Cafe (Mock)",
+                "Location": location,
+                "URL": url,
+                "Status": "New",
+                "DateFound": datetime.today().date().isoformat(),
+            }]
 
-        return scraped_jobs
+        return results

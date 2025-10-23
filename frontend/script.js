@@ -1,6 +1,5 @@
 /*
-Create some OOP code for holding a list of Source, Date Posted, Experience Level, Job Title, and Location.
-All Data will be a string.
+Job Search Class Definition, and all functions for handling backend and front end requests
 */
 
 class JobSearch {

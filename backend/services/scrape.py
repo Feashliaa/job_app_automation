@@ -1,7 +1,9 @@
 # backend/services/scrape.py
 
 from datetime import datetime
-from backend.services.linkedin_scraper import scrape_linkedin
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from backend.services.scrapers.linkedin_scraper import LinkedInScraper
+from backend.services.scrapers.hiring_cafe import HiringCafeScraper
 from backend.services.scraper import Scraper
 
 def run_scraper(date_posted: str, 
@@ -15,13 +17,46 @@ def run_scraper(date_posted: str,
 
     print(f"[{datetime.now()}] Starting scrape for ...")
 
-    scraper = Scraper()
+    # Original Scraper
+    """ 
+    #scraper = Scraper()
+    #hiring_cafe_scraper = HiringCafeScraper()
     
     try:
-        results = scraper.scrape(date_posted, experience_level, job_title, location)
+        #results = scraper.scrape(date_posted, experience_level, job_title, location)
+        results = hiring_cafe_scraper.scrape(date_posted, experience_level, job_title, location)
     finally:
-        scraper.close()
+        #scraper.close()
+        hiring_cafe_scraper.close()
 
 
     print(f"[{datetime.now()}] Scrape completed. Found {len(results)} job(s).")
+    return results  
+    """
+    
+    scrapers = [
+        ("Hiring Cafe", HiringCafeScraper()),
+    ]
+    
+    results = []
+    
+    # Run each scraper in its own thread
+    with ThreadPoolExecutor(max_workers=len(scrapers)) as executor:
+        futures = { # expected items
+            executor.submit(scraper.scrape, date_posted, experience_level, job_title, location): (name, scraper)
+            for name, scraper in scrapers
+        }
+
+        for future in as_completed(futures): # fill the results dictionary
+            name, scraper = futures[future]
+            try:
+                data = future.result()
+                results.extend(data)
+                print(f"[{name}] Completed with {len(data)} results.")
+            except Exception as e:
+                print(f"[{name}] Failed: {e}")
+            finally:
+                scraper.close()
+
+    print(f"[{datetime.now()}] All scrapers completed. Total: {len(results)} jobs.")
     return results
