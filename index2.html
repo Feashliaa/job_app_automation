@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Automated Job Application Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+    <div class="dashboard">
+        <h2>Job Application Dashboard</h2>
+
+        <form id="jobForm">
+            <!-- Source -->
+
+            <!--             <div class="form-group">
+                <label for="source">Source</label>
+                <select id="source" name="source" required>
+                    <option value="" selected>--Choose--</option>
+                    <option value="Indeed">Indeed</option>
+                </select>
+            </div> 
+-->
+
+            <!-- Date Posted -->
+            <div class="form-group">
+                <label for="date-posted">Date Posted</label>
+                <select id="date-posted" name="date-posted" required>
+                    <option value="" selected>--Choose--</option>
+                    <option value="Past Month">Past Month</option>
+                    <option value="Past Week">Past Week</option>
+                    <option value="Past 24 Hours">Past 24 Hours</option>
+                </select>
+            </div>
+
+            <!-- Experience Level -->
+            <div class="form-group">
+                <label for="experience">Experience Level</label>
+                <select id="experience" name="experience" required>
+                    <option value="" selected>--Choose--</option>
+                    <option value="Entry Level">Entry Level</option>
+                    <option value="Mid Level">Mid Level</option>
+                    <option value="Senior Level">Senior Level</option>
+                </select>
+            </div>
+
+            <!-- Job Title -->
+            <div class="form-group">
+                <label for="job-title">Job Title</label>
+                <select id="job-title" name="job-title" required>
+                    <option value="" selected>--Choose--</option>
+                    <option value="Software Engineer">Software Engineer</option>
+                    <option value="Quality Assurance Engineer">Quality Assurance Engineer</option>
+                    <option value="Data Analyst">Data Analyst</option>
+                    <option value="Frontend Developer">Frontend Developer</option>
+                    <option value="Backend Developer">Backend Developer</option>
+                </select>
+            </div>
+
+
+            <!-- Location -->
+            <div class="form-group">
+                <label>Location</label>
+                <select id="location" name="location">
+                    <option type="text" value="Remote">Remote</option>>
+                </select>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" id="submitBtn">Search For Jobs</button>
+            <button type="button" id="queryBtn">Query Database</button>
+        </form>
+
+        <div id="results" style="display:none;">
+            <h2>Job Search Results</h2>
+            <div class="filter-panel">
+                <button class="filter-toggle" aria-expanded="false" aria-controls="filter-controls">
+                    <span class="filter-icon">🔍</span> Filters
+                </button>
+                <div id="filter-controls" class="filter-controls" style="display: none;">
+                    <div class="filter-group">
+                        <label for="filter-title">Job Title</label>
+                        <input type="text" id="filter-title" placeholder="e.g., Software Engineer"
+                            aria-label="Filter by job title">
+                    </div>
+                    <div class="filter-group">
+                        <label for="filter-company">Company</label>
+                        <input type="text" id="filter-company" placeholder="e.g., Indeed Corp."
+                            aria-label="Filter by company">
+                    </div>
+                    <div class="filter-group">
+                        <label for="filter-location">Location</label>
+                        <input type="text" id="filter-location" placeholder="e.g., Remote"
+                            aria-label="Filter by location">
+                    </div>
+                    <div class="filter-group">
+                        <label for="filter-status">Status</label>
+                        <select id="filter-status" aria-label="Filter by status">
+                            <option value="">All Statuses</option>
+                            <option value="New">New</option>
+                            <option value="Applied">Applied</option>
+                            <option value="Interview">Interview</option>
+                            <option value="Rejected">Rejected</option>
+                            <option value="Ignored">Ignored</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filter-date-from">Date Found (From)</label>
+                        <input type="date" id="filter-date-from" aria-label="Filter by date found from">
+                    </div>
+                    <div class="filter-group">
+                        <label for="filter-date-to">Date Found (To)</label>
+                        <input type="date" id="filter-date-to" aria-label="Filter by date found to">
+                    </div>
+                    <div class="filter-actions">
+                        <button type="button" class="clear-filters">Clear Filters</button>
+                    </div>
+                </div>
+            </div>
+            <table class="job-table">
+                <thead>
+                    <tr>
+                        <th>Job Title</th>
+                        <th>Company</th>
+                        <th>Location</th>
+                        <th>Job URL</th>
+                        <th>Job Status</th>
+                        <th>Date Found</th>
+                        <th>Remove</th>
+                        <th>Apply</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="8">No job applications found.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <button type="button" class="remove-button" id="remove-button">Remove Selected Jobs</button>
+            <button type="button" class="apply-button" id="apply-button">Apply to Selected Jobs</button>
+        </div>
+
+    </div>
+</body>
+
+</html>

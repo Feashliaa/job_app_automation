@@ -1,0 +1,31 @@
+CREATE TABLE job_query (
+    query_id INT(11) NOT NULL AUTO_INCREMENT,
+    source ENUM('LinkedIn', 'Indeed') DEFAULT 'LinkedIn',
+    date_posted ENUM('Past 24 hours', 'Past Week', 'Past Month') DEFAULT 'Past Week',
+    experience_level ENUM('Entry Level', 'Mid Level', 'Senior Level') DEFAULT 'Entry Level',
+    job_title VARCHAR(255),
+    location VARCHAR(255),
+    PRIMARY KEY (query_id)
+);
+
+CREATE TABLE jobs (
+    JobId INT(11) NOT NULL AUTO_INCREMENT,
+    JobTitle VARCHAR(255),
+    Company VARCHAR(255),
+    Location VARCHAR(255),
+    Source ENUM('Indeed', 'LinkedIn'),
+    URL VARCHAR(255),
+    Status ENUM('New', 'Applied', 'Ignored') DEFAULT 'New',
+    DateFound DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (JobId)
+);
+
+CREATE TABLE scrape_sessions (
+    scrape_session_id INT(11) NOT NULL AUTO_INCREMENT,
+    source ENUM('Indeed', 'LinkedIn'),
+    keywords VARCHAR(255),
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('Running', 'Complete', 'Failed') DEFAULT 'Running',
+    log VARCHAR(1000),
+    PRIMARY KEY (scrape_session_id)
+);

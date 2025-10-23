@@ -1,0 +1,511 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 40px;
+    background-color: #f8f9fa;
+}
+
+.dashboard {
+    max-width: 800px;
+    margin: auto;
+    padding: 24px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+    text-align: center;
+    color: #0073b1;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+input,
+select,
+button {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+button {
+    background: #0073b1;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #005983;
+}
+
+form button+button {
+    margin-top: 12px;
+}
+
+
+
+/* --- Job Results Table Styles --- */
+
+.filter-panel {
+    margin-bottom: 24px;
+    position: relative;
+}
+
+.filter-toggle {
+    display: flex;
+    align-items: center;
+    background: #0073b1;
+    color: white;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background 0.2s;
+}
+
+.filter-toggle:hover {
+    background: #005983;
+}
+
+.filter-icon {
+    margin-right: 10px;
+}
+
+.filter-controls {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 20px;
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+}
+
+.filter-group {
+    flex: 1 1 250px;
+    min-width: 200px;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    font-size: 15px;
+}
+
+.filter-group input,
+.filter-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 15px;
+}
+
+.filter-actions {
+    display: flex;
+    align-items: flex-end;
+    flex: 1 1 250px;
+}
+
+.clear-filters {
+    background: #dc3545;
+    color: white;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.clear-filters:hover {
+    background: #c82333;
+}
+
+#results {
+    margin-top: 40px;
+    background: white;
+    padding: 24px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+    display: none;
+}
+
+#results.visible {
+    display: block;
+}
+
+#results h2 {
+    text-align: center;
+    color: #0073b1;
+    margin-bottom: 20px;
+}
+
+.job-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.job-table thead {
+    background-color: #0073b1;
+    color: white;
+}
+
+.job-table th,
+.job-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.job-table tr:nth-child(even) {
+    background-color: #f2f8fc;
+}
+
+.job-table a {
+    color: #0073b1;
+    text-decoration: none;
+}
+
+/* Status label styles */
+.status {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.status.new {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.status.applied {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status.interview {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status.rejected {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.status.ignored {
+    background-color: #e9ecef;
+    color: #343a40;
+}
+
+/* --- End Job Results Table Styles --- */
+
+#results {
+    padding: 20px 30px;
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+.job-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+    max-width: 100%;
+}
+
+.job-table th,
+.job-table td {
+    text-align: left;
+    padding: 10px 14px;
+    white-space: normal;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+    min-width: 0;
+}
+
+.job-table th {
+    background-color: #0073b1;
+    color: #fff;
+}
+
+.job-table tr:nth-child(even) {
+    background-color: #f9fbfd;
+}
+
+.job-table td>* {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.job-table td a {
+    overflow-wrap: normal;
+    color: inherit;
+    text-decoration: none;
+}
+
+.job-table td img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+.job-table th:last-child,
+.job-table td:checkbox-cell {
+    text-align: center;
+    width: 60px;
+}
+
+.remove-checkbox,
+.apply-checkbox {
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
+.remove-button {
+    margin-top: 15px;
+    padding: 10px 16px;
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.remove-button:hover {
+    background-color: #c82333;
+}
+
+.apply-button {
+    margin-top: 15px;
+    padding: 10px 16px;
+    background-color: #0c5460;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.apply-button:hover {
+    background-color: #117f92;
+}
+
+/* Mobile/Tablet Adjustments */
+@media (max-width: 900px) {
+    .filter-controls {
+        flex-direction: column;
+        gap: 20px;
+        padding: 16px;
+    }
+
+    .filter-group {
+        flex: 1 1 100%;
+        min-width: 100%;
+    }
+
+    .filter-actions {
+        flex: 0 0 auto;
+        width: auto;
+        justify-content: flex-start;
+    }
+
+    .filter-toggle {
+        width: 100%;
+        font-size: 14px;
+        padding: 10px 16px;
+    }
+
+    .filter-group input,
+    .filter-group select {
+        padding: 9px;
+        font-size: 14px;
+    }
+
+    .clear-filters {
+        padding: 9px 16px;
+        font-size: 14px;
+    }
+
+    #results {
+        padding: 14px;
+        margin-top: 20px;
+    }
+
+    #results h2 {
+        font-size: 18px;
+        margin-bottom: 12px;
+        text-align: center;
+    }
+
+    .job-table td.checkbox-cell {
+        justify-content: center;
+        align-items: center;
+        padding: 8px 0;
+        min-height: 40px;
+        width: auto;
+        display: flex;
+        flex-direction: row;
+        /* Align label and checkbox horizontally */
+        gap: 4px;
+        /* Small gap between label and checkbox */
+    }
+
+    .job-table td.checkbox-cell::before {
+        font-weight: 600;
+        color: #2a3f5f;
+        margin: 0;
+        text-align: left;
+    }
+
+    .job-table td.checkbox-cell.remove::before {
+        content: "Remove";
+    }
+
+    .job-table td.checkbox-cell.apply::before {
+        content: "Apply";
+    }
+
+    /* Hide table headers for mobile */
+    .job-table thead {
+        display: none;
+    }
+
+    .job-table {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    .job-table tbody {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    .job-table tr {
+        background: #fff;
+        border: 1px solid #e0e6ed;
+        border-radius: 10px;
+        padding: 8px;
+        /* Reduced padding for compactness */
+        margin-bottom: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        /* Subtle shadow for depth */
+        box-sizing: border-box;
+        width: 90%;
+        max-width: 500px;
+        /* Slightly reduced for better fit */
+    }
+
+    .job-table td {
+        display: flex;
+        align-items: center;
+        padding: 4px 0;
+        /* Reduced padding for tighter layout */
+        border: none;
+        font-size: 14px;
+        width: 100%;
+        min-height: 24px;
+        /* Reduced for compactness */
+    }
+
+    .job-table td::before {
+        content: attr(data-label, "");
+        font-weight: 600;
+        color: #2a3f5f;
+        min-width: 80px;
+        /* Fixed width for labels, adjustable */
+        margin-right: 8px;
+        /* Reduced spacing */
+        flex-shrink: 0;
+        box-sizing: border-box;
+    }
+
+    .job-table td:not(.checkbox-cell) {
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .job-table td:not(.checkbox-cell)>* {
+        text-align: right;
+        flex: 1 1 auto;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        padding-left: 8px;
+        /* Add padding to separate content from label */
+        border-left: 1px solid #e0e6ed;
+        /* Subtle divider */
+    }
+
+    .job-table a {
+        color: #0073e6;
+        text-align: right;
+        flex: 1 1 auto;
+        overflow-wrap: break-word;
+        text-decoration: none;
+        /* Remove underline for cleaner look */
+    }
+
+    .job-table .status {
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        text-align: right;
+        flex: 1 1 auto;
+        display: inline-block;
+        /* Ensure proper sizing */
+    }
+}
+
+/* --- Extra small phones --- */
+@media (max-width: 420px) {
+    .job-table td {
+        font-size: 13px;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        hyphens: auto;
+    }
+
+    .job-table td::before {
+        margin-bottom: 3px;
+        width: 100%;
+        text-align: center;
+    }
+
+    .job-table a {
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        text-align: center;
+        width: 100%;
+    }
+
+    .status {
+        text-align: center;
+    }
+}
