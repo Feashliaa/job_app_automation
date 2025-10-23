@@ -18,22 +18,26 @@ def run_scraper(date_posted: str,
     print(f"[{datetime.now()}] Starting scrape for ...")
 
     # Original Scraper
-    """ 
+    
     #scraper = Scraper()
     #hiring_cafe_scraper = HiringCafeScraper()
+    linked_in_scraper = LinkedInScraper()
     
     try:
         #results = scraper.scrape(date_posted, experience_level, job_title, location)
-        results = hiring_cafe_scraper.scrape(date_posted, experience_level, job_title, location)
+        #results = hiring_cafe_scraper.scrape(date_posted, experience_level, job_title, location)
+        results = linked_in_scraper.scrape(date_posted, experience_level, job_title, location)
     finally:
         #scraper.close()
-        hiring_cafe_scraper.close()
+        #hiring_cafe_scraper.close()
+        linked_in_scraper.close()
 
 
     print(f"[{datetime.now()}] Scrape completed. Found {len(results)} job(s).")
     return results  
-    """
     
+    
+    """     
     scrapers = [
         ("Hiring Cafe", HiringCafeScraper()),
     ]
@@ -59,4 +63,5 @@ def run_scraper(date_posted: str,
                 scraper.close()
 
     print(f"[{datetime.now()}] All scrapers completed. Total: {len(results)} jobs.")
-    return results
+    return results 
+    """
