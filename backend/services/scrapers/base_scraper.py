@@ -1,14 +1,12 @@
 # backend/services/base_scraper.py
-# Sets up variables shared among scrapes, the url method, the create driver method, 
-# wait method, and close method
+# Sets up variables shared among scrapes, the url method, 
+# the create driver method, wait method, and close method
 import time
 import random
-from datetime import datetime
 from backend.services import utils
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-
 
 class BaseScraper:
     def __init__(self):

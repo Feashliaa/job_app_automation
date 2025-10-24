@@ -4,7 +4,6 @@ from flask import Flask, send_from_directory, request, jsonify
 from flask_cors import CORS
 from datetime import datetime
 import os
-
 from backend.db.db_config import SessionLocal, engine, Base
 from backend.db.models import Job_Query, Scrape_Session, Job, ScrapeStatus, JobStatus
 from backend.services.scrape import run_scraper
@@ -15,15 +14,11 @@ CORS(app)
 # Dynamically resolve the frontend folder path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
-print("Base directory:", BASE_DIR)  # For debugging path issues
-print("Frontend directory:", FRONTEND_DIR)  # For debugging path issues
-
 
 # Serve index.html
 @app.route("/")
 def serve_index():
     return send_from_directory(FRONTEND_DIR, "index.html")
-
 
 # Serve static assets (JS, CSS, etc.)
 @app.route("/<path:path>")
@@ -38,20 +33,12 @@ def add_job_request():
         db = SessionLocal()
 
         # Save query info
-        # Pass raw strings for source/date_posted/experience_level so they are
-        # stored as the human-readable values (e.g. "Past Month"). Previously
-        # constructing the Enum with the incoming string caused SQLAlchemy to
-        # match by enum member name (e.g. 'PastMonth'), which removed spaces.
         new_query = Job_Query(
             date_posted=job_data.get("datePosted"),
             experience_level=job_data.get("experienceLevel"),
             job_title=job_data.get("jobTitle"),
             location=job_data.get("location"),
         )
-
-        print("New query data:")  # Debugging line
-        for key, value in job_data.items():
-            print(f"{key}: {value}")  # Debugging line
 
         db.add(new_query)
         db.commit()
@@ -65,7 +52,6 @@ def add_job_request():
                 status=ScrapeStatus.Running,
                 log="Scrape started.",
             )
-
             db.add(new_session)
             db.commit()
             db.refresh(new_session)
@@ -89,7 +75,6 @@ def add_job_request():
                 location=job_data.get("location"),
             )
             
-
             # Insert scraped jobs
             for job in scraped_jobs:
                 new_job = Job(
@@ -151,7 +136,6 @@ def add_job_request():
         # return success response
         return jsonify({"status": "success", "jobs": jobs_saved}), 200
     
-
     except Exception as e:
         print("Error in add_job_request:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -196,7 +180,6 @@ def refresh_jobs():
         print("Error in refresh_jobs:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
     
-
 # Get Jobs API route
 @app.route("/get_jobs", methods=["GET"])
 def get_jobs():

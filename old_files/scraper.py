@@ -4,8 +4,6 @@ import json
 import urllib.parse
 import time
 import random
-import base64
-import requests
 from datetime import datetime
 from backend.services import utils
 from selenium.webdriver.support.ui import WebDriverWait

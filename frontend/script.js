@@ -32,6 +32,7 @@ class JobList {
 
 // Create a global JobList instance
 const jobList = new JobList();
+let allJobs = []; // store the latest fetched jobs globally, used in filter
 
 let filterState = {
     title: '',
@@ -155,7 +156,10 @@ async function sendJobToBackend(job) {
         }
         const data = await response.json();
         console.log('Response from backend:', JSON.stringify(data, null, 2));
-        updateResultsTable(data);
+
+        allJobs = data.jobs || [];
+
+        renderJobs();
     } catch (error) {
         console.error('Error in Send to Backend:', error);
     }
@@ -214,8 +218,6 @@ function updateResultsTable(jobData) {
     }
 }
 
-let allJobs = []; // store the latest fetched jobs globally
-
 // Renders the table, optionally filtering out ignored jobs
 function renderJobs() {
     const filteredJobs = allJobs.filter(job => {
@@ -234,7 +236,6 @@ function renderJobs() {
 
         return titleMatch && companyMatch && locationMatch && statusMatch;
     });
-
     updateResultsTable({ jobs: filteredJobs });
 }
 
