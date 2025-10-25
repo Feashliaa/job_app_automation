@@ -158,6 +158,25 @@ def remove_jobs():
         print("Error in remove_jobs:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
      
+# Apply To Jobs API route - Place holder for just changing status
+@app.route("/apply_jobs", methods=["POST"])
+def apply_jobs():
+    try:
+        jobs_to_apply = request.get_json().get("jobURLs", [])
+        db = SessionLocal()
+        for job_url in jobs_to_apply:
+            job = db.query(Job).filter(Job.URL == job_url).first()
+            if job:
+                job.Status = JobStatus.Applied
+                print(f"Marked job as Applied: {job.JobTitle} at {job.Company}")
+        db.commit()
+        db.close()
+        return jsonify({"status": "success"}), 200
+    except Exception as e:
+        print("Error in apply_jobs:", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+  
 # Refresh Jobs API route
 @app.route("/refresh_jobs", methods=["GET"])
 def refresh_jobs():
@@ -187,9 +206,9 @@ def get_jobs():
     
 if __name__ == "__main__":
     # Only for testing: drop existing tables - If actually using a persistent DB, remove this line
-    Base.metadata.drop_all(bind=engine)
+    #Base.metadata.drop_all(bind=engine)
 
     # Create tables based on models
-    Base.metadata.create_all(bind=engine)
+    #Base.metadata.create_all(bind=engine)
 
     app.run(debug=True, host="0.0.0.0", port=5000)

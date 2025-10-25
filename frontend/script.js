@@ -44,13 +44,8 @@ let filterState = {
 // Handle form submission
 document.addEventListener("DOMContentLoaded", () => {
     const jobForm = document.getElementById("jobForm");
-    const removeButton = document.getElementById("remove-button");
-    const applyButton = document.getElementById("apply-button");
 
-    // Debug log to check button existence
-    console.log("removeButton:", removeButton, "applyButton:", applyButton);
-
-    document.getElementById("apply-button").addEventListener("click", () => console.log("Apply clicked"));
+    const eventButton = document.getElementById("event-handler");
 
     jobForm.addEventListener("submit", (event) => {
         event.preventDefault();
@@ -95,16 +90,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    if (removeButton) {
-        removeButton.addEventListener("click", handleRemoveSelected);
-    } else {
-        console.error("Remove button not found in the DOM.");
-    }
-    if (applyButton) {
-        applyButton.addEventListener("click", handleApplySelected);
-    } else {
-        console.error("Apply button not found in the DOM.");
-    }
+    document.getElementById("event-handler")
+    .addEventListener("click", handleAllSelected);
 
     document.addEventListener("change", (event) => {
         if (event.target.id === "showIgnored") {
@@ -239,76 +226,42 @@ function renderJobs() {
     updateResultsTable({ jobs: filteredJobs });
 }
 
-async function handleRemoveSelected() {
-    const checkboxes = [...document.querySelectorAll(".remove-checkbox:checked")];
-    const jobsToRemove = checkboxes.map(cb => cb.dataset.jobId).filter(Boolean);
-
-    if (jobsToRemove.length === 0) {
-        alert("No jobs selected for removal.");
-        return;
-    }
-
-    if (!confirm(`Are you sure you want to remove ${jobsToRemove.length} selected job(s)?`)) {
-        return;
-    }
+async function handleAllSelected() {
+    const actions = ["remove", "apply"];
+    const button = document.getElementById("event-handler");
+    button.disabled = true;
+    button.textContent = "Processing...";
 
     try {
-        // Disable remove button to prevent duplicate clicks
-        const removeButton = document.getElementById("remove-button");
-        removeButton.disabled = true;
-        removeButton.textContent = "Removing...";
+        for (const action of actions) {
+            const checkboxes = document.querySelectorAll(`.${action}-checkbox:checked`);
+            const jobs = Array.from(checkboxes).map(cb => cb.dataset.jobId).filter(Boolean);
+            if (jobs.length === 0) continue;
 
-        const response = await fetch("/remove_jobs", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ jobURLs: jobsToRemove }),
-        });
+            if (action === "remove" &&
+                !confirm(`Are you sure you want to remove ${jobs.length} job(s)?`)) {
+                continue;
+            }
 
-        if (!response.ok) {
-            throw new Error(`Failed to remove jobs. HTTP ${response.status}`);
+            const response = await fetch(`/${action}_jobs`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ jobURLs: jobs })
+            });
+
+            if (!response.ok) throw new Error(`Failed to ${action} jobs.`);
+
+            console.log(`Completed ${action} for ${jobs.length} jobs.`);
         }
 
-        const data = await response.json();
-        console.log("Jobs removed:", data);
-
-        // Fetch updated job list
-        const refreshResponse = await fetch("/refresh_jobs");
-        if (!refreshResponse.ok) {
-            throw new Error(`Failed to refresh jobs. HTTP ${refreshResponse.status}`);
-        }
-
-        const updatedData = await refreshResponse.json();
-        updateResultsTable(updatedData);
-
-        alert("Selected jobs removed successfully!");
-    } catch (error) {
-        console.error("Error removing jobs:", error);
-        alert("There was an error removing jobs. Please try again.");
+        const refresh = await fetch("/refresh_jobs");
+        updateResultsTable(await refresh.json());
+        alert("All selected jobs processed successfully!");
+    } catch (err) {
+        console.error("Error processing jobs:", err);
+        alert("Error while processing selected jobs.");
     } finally {
-        // Re-enable button regardless of success/failure
-        const removeButton = document.getElementById("remove-button");
-        removeButton.disabled = false;
-        removeButton.textContent = "Remove Selected Jobs";
-    }
-}
-
-async function handleApplySelected() {
-    const checkboxes = document.querySelectorAll(".apply-checkbox:checked");
-    const jobsToApply = Array.from(checkboxes).map(cb => cb.dataset.jobId).filter(Boolean);
-
-    console.log("Entered handleApplySelected");
-    console.log("Found checkboxes:", checkboxes.length);
-    console.log("Jobs to apply:", jobsToApply);
-
-    if (jobsToApply.length === 0) {
-        console.log("No jobs selected, exiting early");
-        alert("No jobs are selected to apply for.");
-        return;
-    }
-
-    try {
-        console.log("Haven't Gotten this Far Yet");
-    } catch (error) {
-        console.error("Error Applying to Jobs: ", error);
+        button.disabled = false;
+        button.textContent = "Handle Selected Jobs";
     }
 }
