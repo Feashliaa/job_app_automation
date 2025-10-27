@@ -128,7 +128,7 @@ def add_job_request():
                 "Location": job.Location,
                 "URL": job.URL,
                 "Status": job.Status,
-                "DateFound": job.DateFound.isoformat(),
+                "DateFound": str(job.DateFound),
             }
     for job in jobs_saved
 ]
@@ -194,7 +194,7 @@ def refresh_jobs():
                 "Location": job.Location,
                 "URL": job.URL,
                 "Status": job.Status,
-                "DateFound": job.DateFound.isoformat(),
+                "DateFound": str(job.DateFound),
             })
         db.close()
         return jsonify({"status": "success", "jobs": jobs_list}), 200

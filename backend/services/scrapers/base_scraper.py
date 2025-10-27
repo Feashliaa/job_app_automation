@@ -16,6 +16,9 @@ class BaseScraper:
         self.email_password = env_vars["EMAIL_PASSWORD"]
 
     def _go_to_url(self, url):
+        
+        print(f"DEBUG navigating to: {url}")
+        
         self.driver.delete_all_cookies()
         self.driver.get("about:blank")
         time.sleep(1)

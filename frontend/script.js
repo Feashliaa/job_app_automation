@@ -291,7 +291,6 @@ function renderJobs() {
         });
     }
 
-
     updateResultsTable({ jobs: filteredJobs });
 }
 
