@@ -29,10 +29,15 @@ class Scraper:
 
     JOB_TITLE_QUERY_MAP = {
         "Software Engineer": "software+engineer",
+        "Software Developer": "software+developer",
         "Quality Assurance Engineer": "quality+assurance+engineer",
+        "Software Test Engineer": "software+test+engineer",
+        "Automation Engineer": "automation+engineer",
         "Data Analyst": "data+analyst",
         "Frontend Developer": "frontend+developer",
         "Backend Developer": "backend+developer",
+        "Web Developer": "web+developer",
+        "Full-Stack Developer": "full+stack+developer",
     }
 
     def __init__(self):
@@ -44,17 +49,19 @@ class Scraper:
         self.email_password = env_vars["EMAIL_PASSWORD"]
 
     def _build_search_url(self, date_posted, experience_level, job_title, location):
-        # Map inputs to values or provide fallbacks
         date_posted_val = self.DATE_POSTED_MAP.get(date_posted, 14)
         exp_val = self.EXPERIENCE_LEVEL_MAP.get(experience_level, "Entry Level")
-        job_val = self.JOB_TITLE_QUERY_MAP.get(job_title, "software+engineer")
 
-        # Determine workplace type
+        # if typed job title not in map, auto-generate token
+        if job_title in self.JOB_TITLE_QUERY_MAP:
+            job_val = self.JOB_TITLE_QUERY_MAP[job_title]
+        else:
+            job_val = urllib.parse.quote_plus(job_title.strip().lower())
+
         workplace_type = (
             ["Remote"] if "remote" in location.lower() else [location.title()]
         )
 
-        # Build the JSON search state
         search_state = {
             "dateFetchedPastNDays": date_posted_val,
             "searchQuery": job_val,
@@ -62,9 +69,7 @@ class Scraper:
             "seniorityLevel": [exp_val],
         }
 
-        # URL-encode the JSON
         encoded_state = urllib.parse.quote(json.dumps(search_state))
-
         return f"{self.BASE_URL}?searchState={encoded_state}"
 
     def _go_to_url(self, url):  # used to navigate to a URL

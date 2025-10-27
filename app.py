@@ -84,6 +84,7 @@ def add_job_request():
                     URL=job["URL"],
                     Status="New",
                     DateFound=datetime.now().date(),
+                    scrape_session_id=new_session.scrape_session_id,
                 )
                 # check if the url in this matches any url in the table already
                 temp_job = db.query(Job).filter(Job.URL == new_job.URL).first()
@@ -111,30 +112,33 @@ def add_job_request():
         db.close()
         
         # open database session
-        # create a dictionary to grab all the jobs from the jobs table
+        # create a dictionary to grab all new jobs
         # return them as a list of dictionaries
         db = SessionLocal()
-        jobs_in_db = db.query(Job).all()
-        jobs_saved = []
-        for job in jobs_in_db:
-            if job.Status == JobStatus.Ignored:
-                print("Job Ignored...")
-            else:
-                jobs_saved.append({
-                    "JobTitle": job.JobTitle,
-                    "Company": job.Company,
-                    "Location": job.Location,
-                    "URL": job.URL,
-                    "Status": job.Status,
-                    "DateFound": job.DateFound.isoformat(),
-                })
+        jobs_saved = (
+            db.query(Job)
+            .filter(Job.Status == JobStatus.New)
+            .order_by(Job.DateFound.desc())
+            .all()
+        )
+        response_jobs = [
+            {
+                "JobTitle": job.JobTitle,
+                "Company": job.Company,
+                "Location": job.Location,
+                "URL": job.URL,
+                "Status": job.Status,
+                "DateFound": job.DateFound.isoformat(),
+            }
+    for job in jobs_saved
+]
         db.close()
         
-        print(f"Total jobs in database: {len(jobs_saved)}")  # Debugging line
-        print("Jobs:", jobs_saved)  # Debugging line
+        print(f"Total jobs in database: {len(response_jobs)}")  # Debugging line
+        print("Jobs:", response_jobs)  # Debugging line
         
         # return success response
-        return jsonify({"status": "success", "jobs": jobs_saved}), 200
+        return jsonify({"status": "success", "jobs": response_jobs}), 200
     
     except Exception as e:
         print("Error in add_job_request:", e)
@@ -175,7 +179,6 @@ def apply_jobs():
     except Exception as e:
         print("Error in apply_jobs:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
-
   
 # Refresh Jobs API route
 @app.route("/refresh_jobs", methods=["GET"])

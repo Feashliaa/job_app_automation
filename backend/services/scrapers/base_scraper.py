@@ -16,8 +16,12 @@ class BaseScraper:
         self.email_password = env_vars["EMAIL_PASSWORD"]
 
     def _go_to_url(self, url):
+        self.driver.delete_all_cookies()
+        self.driver.get("about:blank")
+        time.sleep(1)
         self.driver.get(url)
-        time.sleep(random.uniform(2, 5))
+        self.driver.get(url)
+        time.sleep(random.uniform(1, 3))
 
     def _wait_for_elements(self, selector, timeout=30):
         WebDriverWait(self.driver, timeout).until(

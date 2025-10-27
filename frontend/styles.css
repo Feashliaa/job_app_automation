@@ -20,7 +20,6 @@ body {
     /* tighter spacing between rows */
 }
 
-
 .filter-panel .filter-toggle {
     display: flex;
     align-items: center;
@@ -105,6 +104,11 @@ body {
 .badge.ignored {
     background-color: #fff5f5 !important;
     color: #dc3545 !important;
+}
+
+th:hover{
+    background-color: #7ba1b6;
+    cursor: pointer;
 }
 
 @media (min-width: 1000) {

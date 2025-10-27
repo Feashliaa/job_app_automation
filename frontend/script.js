@@ -33,6 +33,7 @@ class JobList {
 // Create a global JobList instance
 const jobList = new JobList();
 let allJobs = []; // store the latest fetched jobs globally, used in filter
+let sortState = { key: null, direction: 'asc' };
 
 let filterState = {
     title: '',
@@ -43,9 +44,25 @@ let filterState = {
 
 // Handle form submission
 document.addEventListener("DOMContentLoaded", () => {
-    const jobForm = document.getElementById("jobForm");
 
-    const eventButton = document.getElementById("event-handler");
+    const jobTitleSelect = new Choices("#job-title", {
+        searchEnabled: true,
+        searchChoices: true,
+        addItems: true,
+        addChoices: true,
+        duplicateItemsAllowed: false,
+        shouldSort: false,
+        removeItemButton: true,
+        placeholderValue: "--Choose--",
+        searchPlaceholderValue: "Type or select a job title",
+        itemSelectText: "",
+        maxItemCount: 1
+    });
+
+    // manually open dropdown on focus
+    document.querySelector("#job-title").addEventListener("focus", () => jobTitleSelect.showDropdown());
+
+    const jobForm = document.getElementById("jobForm");
 
     jobForm.addEventListener("submit", (event) => {
         event.preventDefault();
@@ -78,7 +95,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("queryBtn").addEventListener("click", async () => {
         console.log("Query button clicked — fetching from backend...");
-
         try {
             const response = await fetch("/refresh_jobs");
             const data = await response.json();
@@ -91,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.getElementById("event-handler")
-    .addEventListener("click", handleAllSelected);
+        .addEventListener("click", handleAllSelected);
 
     document.addEventListener("change", (event) => {
         if (event.target.id === "showIgnored") {
@@ -100,17 +116,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const filterToggle = document.querySelector('.filter-toggle');
-    const filterControls = document.getElementById('filter-controls');
 
     filterToggle.addEventListener('click', () => {
         const isExpanded = filterToggle.getAttribute('aria-expanded') === 'true';
-        filterControls.style.display = isExpanded ? 'none' : 'flex';
+        document.getElementById('filter-controls').style.display = isExpanded ? 'none' : 'flex';
         filterToggle.setAttribute('aria-expanded', !isExpanded);
     });
 
     // Add event listeners for filter inputs
-    const filterInputs = document.querySelectorAll('.filter-controls input, .filter-controls select');
-    filterInputs.forEach(input => {
+    document.querySelectorAll('.filter-controls input, .filter-controls select').forEach(input => {
         input.addEventListener('input', () => {
             filterState[input.id.replace('filter-', '')] = input.value;
             renderJobs();
@@ -125,6 +139,35 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         renderJobs();
     });
+
+    document.querySelectorAll('.job-table thead th').forEach(th => {
+        th.addEventListener('click', () => {
+            const keyMap = {
+                "Job Title": "JobTitle",
+                "Company": "Company",
+                "Location": "Location",
+                "Job Status": "Status",
+                "Date Found": "DateFound"
+            };
+            const key = keyMap[th.textContent.trim()];
+            if (!key) return;
+
+            if (sortState.key === key) {
+                sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortState.key = key;
+                sortState.direction = 'asc';
+            }
+
+            renderJobs();
+        });
+    });
+
+
+    document.querySelectorAll('.job-table thead th').forEach(th => {
+        th.classList.remove('sorted-asc', 'sorted-desc');
+    });
+    th.classList.add(sortState.direction === 'asc' ? 'sorted-asc' : 'sorted-desc');
 });
 
 // send the object to the backend, app.py
@@ -167,7 +210,7 @@ function updateResultsTable(jobData) {
             <a href="${job.URL}" target="_blank" class="btn btn-sm btn-outline-primary" title="Open job">🔗 Link </a> ` : ""
         },
         { key: "Status", label: "Job Status", render: job => `<span class="badge bg-secondary ${job.Status?.toLowerCase() || ''}">${job.Status || ''}</span>` },
-        { key: "DateFound", label: "Date Found", render: job => job.DateFound ? new Date(job.DateFound).toLocaleDateString() : "" },
+        { key: "DateFound", label: "Date Found", render: job => job.DateFound || "" },
         { key: "Remove", label: "Remove", render: job => `<input type="checkbox" class="form-check-input remove-checkbox" data-job-id="${job.URL || ''}">` },
         { key: "Apply", label: "Apply", render: job => `<input type="checkbox" class="form-check-input apply-checkbox" data-job-id="${job.URL || ''}">` }
     ];
@@ -207,7 +250,13 @@ function updateResultsTable(jobData) {
 
 // Renders the table, optionally filtering out ignored jobs
 function renderJobs() {
-    const filteredJobs = allJobs.filter(job => {
+    const sortedJobs = [...allJobs].sort((a, b) => {
+        if (a.Status === "New" && b.Status !== "New") return -1;
+        if (a.Status !== "New" && b.Status === "New") return 1;
+        return 0;
+    });
+
+    const filteredJobs = sortedJobs.filter(job => {
         const titleMatch = filterState.title
             ? job.JobTitle?.toLowerCase().includes(filterState.title.toLowerCase())
             : true;
@@ -223,6 +272,26 @@ function renderJobs() {
 
         return titleMatch && companyMatch && locationMatch && statusMatch;
     });
+
+    if (sortState.key) {
+        filteredJobs.sort((a, b) => {
+            // Use nullish coalescing (??) to handle undefined/null
+            const aValue = a[sortState.key] ?? '';
+            const bValue = b[sortState.key] ?? '';
+
+            if (aValue === bValue) return 0;
+
+            const ascending = sortState.direction === 'asc';
+
+            // Compare values based on sort direction
+            // Returns -1, 0, or 1 as required by Array.sort()
+            return aValue > bValue
+                ? (ascending ? 1 : -1)
+                : (ascending ? -1 : 1);
+        });
+    }
+
+
     updateResultsTable({ jobs: filteredJobs });
 }
 
