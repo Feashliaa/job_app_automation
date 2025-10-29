@@ -20,10 +20,12 @@
 </head>
 
 <body>
-    <div class="container mt-4">
+    <h1 class="visually-hidden">Automated Job Application Dashboard</h1>
+
+    <main class="container mt-4" role="main">
         <div class="dashboard card p-3 shadow-sm">
             <h2 class="card-title text-center mb-3">Job Application Dashboard</h2>
-            <form id="jobForm" class="row g-3">
+            <form id="jobForm" class="row g-3" novalidate>
                 <div class="col-12 col-md-6">
                     <div class="form-group">
                         <label for="date-posted" class="form-label">Date Posted</label>
@@ -119,18 +121,23 @@
                                 </div>
                             </div>
                             <div class="col-12">
-                                <button type="button" class="btn btn-danger w-100 clear-filters">Clear Filters</button>
+                                <button type="button" class="btn btn-danger w-100 
+                                clear-filters">Clear Filters</button>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="table-responsive">
                     <table class="job-table table table-striped">
+                        <caption class="text-center">
+                            List of job applications with actions
+                        </caption>
                         <thead>
                             <tr>
                                 <th>Job Title</th>
                                 <th>Company</th>
                                 <th>Location</th>
+                                <th>Salary</th>
                                 <th>Job URL</th>
                                 <th>Job Status</th>
                                 <th>Date Found</th>
@@ -140,7 +147,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td colspan="8">No job applications found.</td>
+                                <td colspan="9">No job applications found.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -152,7 +159,24 @@
                 </div>
             </div>
         </div>
+    </main>
+
+    <button type="button" class="btn btn-primary" id="process-fab">
+        Process Selected Jobs
+    </button>
+
+
+    <!-- Toast container for handling pop up messages -->
+    <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3">
+        <div id="job-toast" class="toast align-items-center text-white bg-primary border-0" role="alert"
+            aria-live="polite">
+            <div class="d-flex">
+                <div class="toast-body" id="toast-message">Processing complete.</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
     </div>
+
 </body>
 
 </html>

@@ -110,6 +110,8 @@ class Job(Base):
         SAEnum(JobStatus, values_callable=lambda e: [x.value for x in e], native_enum=False),
         default=JobStatus.New,
     )
+    
+    Salary: Mapped[str] = mapped_column(String(255))
 
     DateFound: Mapped[datetime] = mapped_column(Date)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

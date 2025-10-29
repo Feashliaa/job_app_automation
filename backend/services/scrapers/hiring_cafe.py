@@ -1,6 +1,7 @@
 # backend/services/hiring_cafe.py
 import json
 import urllib.parse
+import re
 from datetime import datetime
 from backend.services import utils
 from selenium.webdriver.support.ui import WebDriverWait
@@ -74,7 +75,7 @@ class HiringCafeScraper(BaseScraper):
 
         # Wait for job postings to load
         self._wait_for_elements("div.relative.bg-white")
-
+        
         job_cards = self.driver.find_elements(By.CSS_SELECTOR, "div.relative.bg-white")
         print(f"Found {len(job_cards)} job postings.")
 
@@ -94,16 +95,34 @@ class HiringCafeScraper(BaseScraper):
                 link = card.find_element(By.CSS_SELECTOR, "a[href*='viewjob']").get_attribute("href")
             except:
                 link = "N/A"
+                            
+            salary = None
+            try:
+                spans = card.find_elements(By.XPATH, 
+                ".//div[contains(@class, 'flex-wrap')]/span")
+                for s in spans:
+                    text = s.text.strip()
+                    if re.search(r"\$\s*\d", text):
+                        salary = text
+                        break
+            except Exception as e:
+                print(f"Salary extraction error: {e}")
+                salary = None
+                
+                
             results.append(
                 {
                     "JobTitle": title,
                     "Company": company,
                     "Location": location,
+                    "Salary": salary,
                     "URL": link,
                     "Status": "New",
                     "DateFound": datetime.today().date().isoformat(),
                 }
             )
+            
+            print(card.get_attribute("innerHTML"))
 
 
         print(f"\nExtracted {len(results) - 1} jobs:")

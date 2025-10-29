@@ -10,7 +10,7 @@ PORT = 3306
 DATABASE = "jobs"
 
 # SQLAlchemy connection URL
-DB_URL = f"mysql+pymysql://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}"
+DB_URL = f"mysql+pymysql://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}?charset=utf8mb4"
 
 # Create engine and session
 # Change "echo" to false if you dont want to see raw SQL queries in the console

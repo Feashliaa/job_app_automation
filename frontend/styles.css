@@ -4,6 +4,16 @@ body {
     margin: 40px;
 }
 
+h2.card-title {
+    text-align: center;
+    margin: 1vh;
+    color: #0073b1;
+    font-size: calc(2vw + 2vh + 1vmin);
+    line-height: 1.2em;
+    transition: font-size 0.5s ease, color 0.5s ease;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
 .container {
     max-width: 1200px;
     margin: 40px auto;
@@ -30,10 +40,23 @@ body {
     padding: 1rem;
 }
 
+#job-title+.choices,
+#location {
+    min-height: 47px;
+}
+
 .job-table {
     width: 100%;
     border-collapse: collapse;
 }
+
+.job-table caption {
+    display: table-caption;
+    caption-side: top;
+    text-align: center;
+    width: 100%;
+}
+
 
 .job-table th,
 .job-table td {
@@ -106,9 +129,23 @@ body {
     color: #dc3545 !important;
 }
 
-th:hover{
+th:hover {
     background-color: #7ba1b6;
     cursor: pointer;
+}
+
+/* Floating action bar */
+#process-fab {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 1050;
+    /* above table/headers */
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .15);
+}
+
+#event-handler {
+    width: 100%;
 }
 
 @media (min-width: 1000) {
@@ -125,6 +162,10 @@ th:hover{
 }
 
 @media (max-width: 1000px) {
+
+    h2.card-title {
+        font-size: calc(3vw + 3vh + 1vmin);
+    }
 
     .job-table thead {
         display: none;
@@ -224,8 +265,25 @@ th:hover{
     }
 }
 
-/* Extra Small Phones (Below 420px) */
-@media (max-width: 420px) {
+@media(max-width: 450px) {
+
+    h2.card-title {
+        font-size: calc(2.5vw + 2.5vh + 1vmin);
+    }
+
+    #submitBtn,
+    #queryBtn {
+        display: block;
+        width: 100%;
+        margin: 6px 0;
+    }
+
+    #queryBtn {
+        margin-top: 8px;
+        margin-left: 0 !important;
+        /* used for overriding the boostrap styles */
+    }
+
     .job-table td {
         font-size: 13px;
         flex-direction: column;
@@ -251,5 +309,11 @@ th:hover{
 
     .job-table .badge {
         text-align: left;
+    }
+
+    #process-fab {
+        left: 16px;
+        right: 16px;
+        width: auto;
     }
 }

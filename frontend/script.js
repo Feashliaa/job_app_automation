@@ -68,8 +68,10 @@ document.addEventListener("DOMContentLoaded", () => {
         event.preventDefault();
         const datePosted = document.getElementById("date-posted").value;
         const experienceLevel = document.getElementById("experience").value;
-        const jobTitle = document.getElementById("job-title").value;
+        const jobTitle = jobTitleSelect.getValue(true);
         const location = document.getElementById("location").value;
+
+        console.log("Job Title: " + jobTitle);
 
         try {
             if (!datePosted || !experienceLevel || !jobTitle) {
@@ -109,6 +111,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("event-handler")
         .addEventListener("click", handleAllSelected);
 
+    document.getElementById("process-fab")
+        .addEventListener("click", handleAllSelected);
+
     document.addEventListener("change", (event) => {
         if (event.target.id === "showIgnored") {
             renderJobs();
@@ -141,15 +146,23 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.querySelectorAll('.job-table thead th').forEach(th => {
+        th.classList.remove('sorted-asc', 'sorted-desc');
+
+        const keyMap = {
+            "Job Title": "JobTitle",
+            "Company": "Company",
+            "Location": "Location",
+            "Job Status": "Status",
+            "Date Found": "DateFound",
+            "Salary": "Salary"
+        };
+        const key = keyMap[th.textContent.trim()];
+
+        if (key === sortState.key) {
+            th.classList.add(sortState.direction === 'asc' ? 'sorted-asc' : 'sorted-desc');
+        }
+
         th.addEventListener('click', () => {
-            const keyMap = {
-                "Job Title": "JobTitle",
-                "Company": "Company",
-                "Location": "Location",
-                "Job Status": "Status",
-                "Date Found": "DateFound"
-            };
-            const key = keyMap[th.textContent.trim()];
             if (!key) return;
 
             if (sortState.key === key) {
@@ -162,12 +175,6 @@ document.addEventListener("DOMContentLoaded", () => {
             renderJobs();
         });
     });
-
-
-    document.querySelectorAll('.job-table thead th').forEach(th => {
-        th.classList.remove('sorted-asc', 'sorted-desc');
-    });
-    th.classList.add(sortState.direction === 'asc' ? 'sorted-asc' : 'sorted-desc');
 });
 
 // send the object to the backend, app.py
@@ -199,12 +206,21 @@ function updateResultsTable(jobData) {
     const resultsDiv = document.getElementById("results");
     const tbody = resultsDiv.querySelector("tbody");
     tbody.innerHTML = ""; // Clear existing rows
-    const jobs = jobData.jobs || [];
+    let jobs = jobData.jobs || [];
+
+    jobs = (jobData.jobs || []).sort((a, b) => {
+        if (a.Status === "New" && b.Status !== "New") return -1;
+        if (a.Status !== "New" && b.Status === "New") return 1;
+        const dateA = new Date(a.DateFound || 0);
+        const dateB = new Date(b.DateFound || 0);
+        return dateB - dateA;
+    });
 
     const columns = [
         { key: "JobTitle", label: "Job Title" },
         { key: "Company", label: "Company" },
         { key: "Location", label: "Location" },
+        { key: "Salary", label: "Salary", render: job => job.Salary || "N/A" },
         {
             key: "URL", label: "Job URL", render: job => job.URL ? `
             <a href="${job.URL}" target="_blank" class="btn btn-sm btn-outline-primary" title="Open job">🔗 Link </a> ` : ""
@@ -294,6 +310,14 @@ function renderJobs() {
     updateResultsTable({ jobs: filteredJobs });
 }
 
+function showToast(message, type = "primary") {
+    const toast = document.getElementById("job-toast");
+    const body = document.getElementById("toast-message");
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    body.textContent = message;
+    new bootstrap.Toast(toast).show();
+}
+
 async function handleAllSelected() {
     const actions = ["remove", "apply"];
     const button = document.getElementById("event-handler");
@@ -305,11 +329,6 @@ async function handleAllSelected() {
             const checkboxes = document.querySelectorAll(`.${action}-checkbox:checked`);
             const jobs = Array.from(checkboxes).map(cb => cb.dataset.jobId).filter(Boolean);
             if (jobs.length === 0) continue;
-
-            if (action === "remove" &&
-                !confirm(`Are you sure you want to remove ${jobs.length} job(s)?`)) {
-                continue;
-            }
 
             const response = await fetch(`/${action}_jobs`, {
                 method: "POST",
@@ -324,10 +343,10 @@ async function handleAllSelected() {
 
         const refresh = await fetch("/refresh_jobs");
         updateResultsTable(await refresh.json());
-        alert("All selected jobs processed successfully!");
+        showToast("All selected jobs processed successfully!", "success")
     } catch (err) {
         console.error("Error processing jobs:", err);
-        alert("Error while processing selected jobs.");
+        showToast("Error while processing selected jobs.", "danger")
     } finally {
         button.disabled = false;
         button.textContent = "Handle Selected Jobs";

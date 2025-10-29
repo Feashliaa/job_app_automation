@@ -15,15 +15,18 @@ CORS(app)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
 
+
 # Serve index.html
 @app.route("/")
 def serve_index():
     return send_from_directory(FRONTEND_DIR, "index.html")
 
+
 # Serve static assets (JS, CSS, etc.)
 @app.route("/<path:path>")
 def serve_static_files(path):
     return send_from_directory(FRONTEND_DIR, path)
+
 
 # API route
 @app.route("/add_job_request", methods=["POST"])
@@ -74,13 +77,14 @@ def add_job_request():
                 job_title=job_data.get("jobTitle"),
                 location=job_data.get("location"),
             )
-            
+
             # Insert scraped jobs
             for job in scraped_jobs:
                 new_job = Job(
                     JobTitle=job["JobTitle"],
                     Company=job["Company"],
                     Location=job["Location"],
+                    Salary=job["Salary"],
                     URL=job["URL"],
                     Status="New",
                     DateFound=datetime.now().date(),
@@ -88,10 +92,10 @@ def add_job_request():
                 )
                 # check if the url in this matches any url in the table already
                 temp_job = db.query(Job).filter(Job.URL == new_job.URL).first()
-                
+
                 if temp_job:
                     print("Job Already in database")
-                else: # job isnt in database, we are good to go
+                else:  # job isnt in database, we are good to go
                     db.add(new_job)
                     # save new_job to an array for testing purposes
                     jobs_saved = []
@@ -110,7 +114,7 @@ def add_job_request():
 
         db.commit()
         db.close()
-        
+
         # open database session
         # create a dictionary to grab all new jobs
         # return them as a list of dictionaries
@@ -126,23 +130,25 @@ def add_job_request():
                 "JobTitle": job.JobTitle,
                 "Company": job.Company,
                 "Location": job.Location,
+                "Salary": job.Salary,
                 "URL": job.URL,
                 "Status": job.Status,
                 "DateFound": str(job.DateFound),
             }
-    for job in jobs_saved
-]
+            for job in jobs_saved
+        ]
         db.close()
-        
+
         print(f"Total jobs in database: {len(response_jobs)}")  # Debugging line
         print("Jobs:", response_jobs)  # Debugging line
-        
+
         # return success response
         return jsonify({"status": "success", "jobs": response_jobs}), 200
-    
+
     except Exception as e:
         print("Error in add_job_request:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 # Remove Selected Jobs API route
 @app.route("/remove_jobs", methods=["POST"])
@@ -161,7 +167,8 @@ def remove_jobs():
     except Exception as e:
         print("Error in remove_jobs:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
-     
+
+
 # Apply To Jobs API route - Place holder for just changing status
 @app.route("/apply_jobs", methods=["POST"])
 def apply_jobs():
@@ -179,7 +186,8 @@ def apply_jobs():
     except Exception as e:
         print("Error in apply_jobs:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
-  
+
+
 # Refresh Jobs API route
 @app.route("/refresh_jobs", methods=["GET"])
 def refresh_jobs():
@@ -188,30 +196,35 @@ def refresh_jobs():
         jobs_in_db = db.query(Job).all()
         jobs_list = []
         for job in jobs_in_db:
-            jobs_list.append({
-                "JobTitle": job.JobTitle,
-                "Company": job.Company,
-                "Location": job.Location,
-                "URL": job.URL,
-                "Status": job.Status,
-                "DateFound": str(job.DateFound),
-            })
+            jobs_list.append(
+                {
+                    "JobTitle": job.JobTitle,
+                    "Company": job.Company,
+                    "Location": job.Location,
+                    "Salary": job.Salary,
+                    "URL": job.URL,
+                    "Status": job.Status,
+                    "DateFound": str(job.DateFound),
+                }
+            )
         db.close()
         return jsonify({"status": "success", "jobs": jobs_list}), 200
     except Exception as e:
         print("Error in refresh_jobs:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
-    
+
+
 # Get Jobs API route
 @app.route("/get_jobs", methods=["GET"])
 def get_jobs():
-    return jsonify({"status": "success"}), 200 # this isnt likely to be used
-    
+    return jsonify({"status": "success"}), 200  # this isnt likely to be used
+
+
 if __name__ == "__main__":
     # Only for testing: drop existing tables - If actually using a persistent DB, remove this line
-    #Base.metadata.drop_all(bind=engine)
+    # Base.metadata.drop_all(bind=engine)
 
     # Create tables based on models
-    #Base.metadata.create_all(bind=engine)
+    # Base.metadata.create_all(bind=engine)
 
     app.run(debug=True, host="0.0.0.0", port=5000)
