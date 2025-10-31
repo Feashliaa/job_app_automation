@@ -128,7 +128,7 @@
                     </div>
                 </div>
                 <div class="table-responsive">
-                    <table class="job-table table table-striped">
+                    <table class="job-table table table-striped-desktop">
                         <caption class="text-center">
                             List of job applications with actions
                         </caption>
@@ -161,9 +161,16 @@
         </div>
     </main>
 
-    <button type="button" class="btn btn-primary" id="process-fab">
-        Process Selected Jobs
-    </button>
+    <div id="process-fab-container" title="Process Selected Jobs" aria-label="Process Selected Jobs">
+        <button type="button" class="btn" id="process-fab">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                <path
+                    d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
+            </svg>
+        </button>
+        <span id="fab-label">Process Selected</span>
+    </div>
 
 
     <!-- Toast container for handling pop up messages -->
