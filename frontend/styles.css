@@ -273,6 +273,10 @@ h2.card-title {
     height: 5%;
 }
 
+#resumeSubmit {
+    margin-right: 10px;
+}
+
 
 /* ========================================
    MOBILE CARD MODE
