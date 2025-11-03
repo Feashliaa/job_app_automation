@@ -3,7 +3,9 @@
 from flask import Flask, send_from_directory, request, jsonify
 from flask_cors import CORS
 from datetime import datetime
+from pdfminer.high_level import extract_text
 import os
+import re
 from backend.db.db_config import SessionLocal, engine, Base
 from backend.db.models import Job_Query, Scrape_Session, Job, ScrapeStatus, JobStatus
 from backend.services.scrape import run_scraper
@@ -218,6 +220,58 @@ def refresh_jobs():
 @app.route("/get_jobs", methods=["GET"])
 def get_jobs():
     return jsonify({"status": "success"}), 200  # this isnt likely to be used
+
+
+# Resume Parser API route
+@app.route("/resume_parse", methods=["POST"])
+def resume_parse():
+    file = request.files.get("resumeFile")
+    if not file or not file.filename:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    upload_dir = "uploads"
+    os.makedirs(upload_dir, exist_ok=True)
+    file_path = os.path.join(upload_dir, file.filename)
+    file.save(file_path)
+
+    text = extract_text(file_path)
+
+    # Split into sections by known headings
+    sections = re.split(
+        r"(?:Professional Summary:|Technical Skills:|Experience|Academic & Independent Projects:|Education:)",
+        text
+    )
+
+    # Pad to avoid index errors
+    while len(sections) < 6:
+        sections.append("")
+
+    data = {
+        "summary": sections[1].strip(),
+        "skills": sections[2].strip(),
+        "experience": sections[3].strip(),
+        "projects": sections[4].strip(),
+        "education": sections[5].strip(),
+    }
+
+    # Parse Technical Skills into structured dict
+    skills = {}
+    for line in data["skills"].splitlines():
+        if ":" in line:
+            key, value = line.split(":", 1)
+            skills[key.strip()] = [s.strip() for s in value.split(",")]
+
+    parsed_resume = {
+        "status": "ok",
+        "filename": file.filename,
+        "summary": data["summary"],
+        "skills": skills,
+        "experience": data["experience"],
+        "projects": data["projects"],
+        "education": data["education"],
+    }
+
+    return jsonify(parsed_resume)
 
 
 if __name__ == "__main__":

@@ -25,7 +25,8 @@
     <main class="container mt-4" role="main">
         <div class="dashboard card p-3 shadow-sm">
             <h2 class="card-title text-center mb-3">Job Application Dashboard</h2>
-            <form id="jobForm" class="row g-3" novalidate>
+            <!-- Job Application Form -->
+            <form id="jobForm" class="row g-3" novalidate autocomplete="on">
                 <div class="col-12 col-md-6">
                     <div class="form-group">
                         <label for="date-posted" class="form-label">Date Posted</label>
@@ -74,11 +75,23 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-12">
-                    <button type="submit" id="submitBtn" class="btn btn-primary">Search For Jobs</button>
+            </form>
+
+            <div id="resumeDiv">
+                <form id="resumeForm" action="/resume_parse" method="post" enctype="multipart/form-data" novalidate>
+                    <label for="resumeUpload" class="resume-upload-label">Upload Resume</label>
+                    <input type="file" id="resumeFile" name="resumeFile" accept=".pdf,.docx" class="form-control mb-2"
+                        required>
+                </form>
+                <div class="col-12 mt-3">
+                    <button type="submit" form="resumeForm" id="resumeSubmit" class="btn btn-primary">Upload
+                        Resume</button>
+                    <button type="button" id="searchBtn" class="btn btn-primary">Search For Jobs</button>
                     <button type="button" id="queryBtn" class="btn btn-secondary ms-2">Query Database</button>
                 </div>
-            </form>
+            </div>
+
+            <!-- Filters Form -->
             <div id="results" class="mt-4" style="display:none;">
                 <h2 class="card-title text-center mb-3">Job Search Results</h2>
                 <div class="filter-panel card p-3 mb-3">
@@ -127,6 +140,9 @@
                         </div>
                     </div>
                 </div>
+
+
+                <!-- Table of Jobs -->
                 <div class="table-responsive">
                     <table class="job-table table table-striped-desktop">
                         <caption class="text-center">
@@ -157,10 +173,14 @@
                         Process Selected Jobs
                     </button>
                 </div>
+
+
             </div>
         </div>
     </main>
 
+
+    <!-- Container Holding the Process Fab Button -->
     <div id="process-fab-container" title="Process Selected Jobs" aria-label="Process Selected Jobs">
         <button type="button" class="btn" id="process-fab">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">

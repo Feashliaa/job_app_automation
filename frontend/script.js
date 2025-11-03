@@ -119,6 +119,19 @@ class JobApp {
         document.querySelectorAll('.job-table thead th').forEach(th => {
             th.addEventListener('click', () => this.handleSort(th));
         });
+
+        // Handle Resume Parsing
+        document.getElementById("resumeForm").addEventListener("submit", async (e) => {
+            e.preventDefault(); // stops redirect
+            const fileInput = document.getElementById("resumeFile");
+            const formData = new FormData();
+            formData.append("resumeFile", fileInput.files[0]);
+
+            const res = await fetch("/resume_parse", { method: "POST", body: formData });
+            const data = await res.json();
+            console.log("Parsed resume:", data);
+        });
+
     }
 
     async handleSubmit(e) {
