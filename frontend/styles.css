@@ -312,6 +312,25 @@ h2.card-title {
     padding-bottom: 6px;
 }
 
+.job-table td.checkbox-cell input.form-check-input.remove-checkbox {
+    width: 28px !important;
+    height: 28px !important;
+    margin: 0 auto !important;
+    flex-shrink: 0;
+    border-radius: 6px;
+    accent-color: var(--accent);
+    box-shadow: 0 0 0 2px #fff, 0 0 0 5px rgba(0, 115, 177, .25);
+}
+
+.job-table td.checkbox-cell input.form-check-input.apply-checkbox {
+    width: 28px !important;
+    height: 28px !important;
+    margin: 0 auto !important;
+    flex-shrink: 0;
+    border-radius: 6px;
+    accent-color: var(--accent);
+    box-shadow: 0 0 0 2px #fff, 0 0 0 5px rgba(0, 115, 177, .25);
+}
 
 
 /* ========================================
@@ -338,6 +357,12 @@ h2.card-title {
         align-items: center;
         gap: 20px;
         width: 100%;
+    }
+
+    .job-table th,
+    .job-table td {
+        text-align: left;
+        vertical-align: middle;
     }
 
     #process-fab-container {
@@ -372,7 +397,6 @@ h2.card-title {
         overflow: hidden;
     }
 
-    /* Subtle inner glow */
     .job-table tr::before {
         content: '';
         position: absolute;
@@ -399,7 +423,6 @@ h2.card-title {
         padding: 10px 0;
         font-size: 15px;
         color: var(--text);
-        border: none;
     }
 
     .job-table td::before {
@@ -498,53 +521,21 @@ h2.card-title {
     }
 
     /* === CHECKBOXES === */
-    .job-table td.checkbox-cell {
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: nowrap;
-        overflow: hidden;
-        padding-right: 4px;
-    }
-
-    .job-table td.checkbox-cell::before {
-        flex: 0 1 auto;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        padding-right: 10px;
-        font-weight: 600;
-    }
-
     .job-table td.checkbox-cell input[type="checkbox"] {
-        flex: 0 0 28px;
-        width: 28px;
-        height: 28px;
+        flex: 0 0 auto !important;
+        width: 24px !important;
+        height: 24px !important;
         accent-color: var(--accent);
         cursor: pointer;
         border-radius: 6px;
         box-shadow: 0 0 0 2px white, 0 0 0 5px rgba(0, 115, 177, 0.25);
-        transform: scale(1.15);
     }
 
-    .job-table td.checkbox-cell.remove::before {
-        content: "Remove";
+    .job-table td.checkbox-cell {
+        padding-right: 6px !important;
+        justify-content: flex-start !important;
+        align-items: flex-start !important;
     }
-
-    .job-table td.checkbox-cell.apply::before {
-        content: "Apply";
-    }
-
-    /* must be loaded after Bootstrap */
-    .job-table td.checkbox-cell input.form-check-input.remove-checkbox {
-        width: 28px !important;
-        height: 28px !important;
-        margin: 0 auto !important;
-        flex-shrink: 0;
-        border-radius: 6px;
-        accent-color: var(--accent);
-        box-shadow: 0 0 0 2px #fff, 0 0 0 5px rgba(0, 115, 177, .25);
-    }
-
 }
 
 /* ========================================
@@ -575,12 +566,16 @@ h2.card-title {
         flex-direction: column;
         align-items: flex-start;
         text-align: left;
-        gap: 6px;
+        gap: 4px;
+        /* tighter */
     }
 
     .job-table td::before {
         flex: 0 0 auto;
         min-width: 0;
+        margin-bottom: 0 !important;
+        /* remove extra label margin */
+        line-height: 1.2;
     }
 
     .job-table td>* {
@@ -594,14 +589,27 @@ h2.card-title {
         align-self: flex-start;
     }
 
+    /* === CHECKBOX CELLS === */
     .job-table td.checkbox-cell {
-        justify-content: flex-start;
-        align-items: flex-start;
+        position: relative !important;
+        text-align: left !important;
+        padding-left: 0 !important;
+        min-height: 80px;
+    }
+
+    .job-table td.checkbox-cell::before {
+        display: block !important;
+        margin: 0 !important;
+        text-align: left !important;
     }
 
     .job-table td.checkbox-cell input[type="checkbox"] {
-        margin-top: 5px;
-        margin-left: 5px;
+        position: absolute !important;
+        top: 40px !important;
+        left: 5px !important;
+        accent-color: var(--accent);
+        cursor: pointer;
+        border-radius: 5px;
+        box-shadow: 0 0 0 1px white, 0 0 0 3px rgba(0, 115, 177, 0.25);
     }
-
 }
