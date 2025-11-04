@@ -36,12 +36,12 @@ class JobApp {
             {
                 key: 'Remove',
                 label: 'Remove',
-                render: job => `<input type="checkbox" class="form-check-input remove-checkbox" data-job-id="${this.escape(job.URL || '')}">`
+                render: job => `<input type="checkbox" class="form-check-input checkbox-lg remove-checkbox" data-job-id="${this.escape(job.URL || '')}">`
             },
             {
                 key: 'Apply',
                 label: 'Apply',
-                render: job => `<input type="checkbox" class="form-check-input apply-checkbox" data-job-id="${this.escape(job.URL || '')}">`
+                render: job => `<input type="checkbox" class="form-check-input checkbox-lg apply-checkbox" data-job-id="${this.escape(job.URL || '')}">`
             }
         ];
 

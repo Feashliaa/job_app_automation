@@ -77,6 +77,10 @@ h2.card-title {
     margin-bottom: 14px;
 }
 
+.form-select {
+    min-height: 46px;
+}
+
 .filter-panel .filter-toggle {
     display: flex;
     align-items: center;
@@ -217,6 +221,31 @@ h2.card-title {
     padding: 4px 8px;
 }
 
+.job-table th,
+.job-table td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.job-table th {
+    font-weight: 600;
+}
+
+.job-table td:nth-child(1),
+.job-table td:nth-child(2) {
+    text-align: left;
+}
+
+.job-table td a {
+    display: inline-block;
+}
+
+.job-table td input[type="checkbox"] {
+    margin: 0 auto;
+    display: block;
+}
+
+
 /* Desktop stripes */
 .table-striped-desktop>tbody>tr:nth-of-type(odd)>td {
     background: rgba(240, 248, 255, 0.6);
@@ -273,9 +302,16 @@ h2.card-title {
     height: 5%;
 }
 
-#resumeSubmit {
-    margin-right: 10px;
+#resumeForm .input-group {
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
+
+#resumeFile {
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
 
 
 /* ========================================
@@ -480,13 +516,14 @@ h2.card-title {
     }
 
     .job-table td.checkbox-cell input[type="checkbox"] {
-        flex: 0 0 22px;
-        width: 22px;
-        height: 22px;
+        flex: 0 0 28px;
+        width: 28px;
+        height: 28px;
         accent-color: var(--accent);
         cursor: pointer;
         border-radius: 6px;
-        box-shadow: 0 0 0 2px white, 0 0 0 4px rgba(0, 115, 177, 0.2);
+        box-shadow: 0 0 0 2px white, 0 0 0 5px rgba(0, 115, 177, 0.25);
+        transform: scale(1.15);
     }
 
     .job-table td.checkbox-cell.remove::before {
@@ -496,27 +533,42 @@ h2.card-title {
     .job-table td.checkbox-cell.apply::before {
         content: "Apply";
     }
+
+    /* must be loaded after Bootstrap */
+    .job-table td.checkbox-cell input.form-check-input.remove-checkbox {
+        width: 28px !important;
+        height: 28px !important;
+        margin: 0 auto !important;
+        flex-shrink: 0;
+        border-radius: 6px;
+        accent-color: var(--accent);
+        box-shadow: 0 0 0 2px #fff, 0 0 0 5px rgba(0, 115, 177, .25);
+    }
+
 }
 
 /* ========================================
    TINY MOBILE: Stack Buttons
    ======================================== */
 
-@media(max-width: 500px) {
-    #resumeDiv .col-12:last-child {
-        display: flex;
+@media (max-width: 500px) {
+    #resumeDiv .row.mt-3 {
         flex-direction: column;
-        gap: 12px;
     }
 
-    #resumeDiv .col-12:last-child .btn {
+    #resumeDiv .row.mt-3>[class^="col-"] {
         width: 100%;
-        margin: 0 !important;
+        margin-bottom: 12px;
+    }
+
+    #resumeDiv .row.mt-3 .btn {
+        width: 100%;
         font-size: 15px;
         padding: 12px;
         border-radius: 10px;
     }
 }
+
 
 @media (max-width: 400px) {
     .job-table td {
