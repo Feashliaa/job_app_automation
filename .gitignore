@@ -22,6 +22,7 @@ Thumbs.db
 # Uploaded / generated data
 uploads/
 *.log
+certs/
 
 # Docker
 mysql_data/
