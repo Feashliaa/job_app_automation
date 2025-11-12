@@ -4,7 +4,6 @@ from datetime import datetime
 from backend.services.scrapers.base_scraper import BaseScraper
 from selenium.webdriver.common.by import By
 
-
 class LinkedInScraper(BaseScraper):
 
     COMPANYS_TO_IGNORE = {
@@ -131,9 +130,7 @@ class LinkedInScraper(BaseScraper):
         print(f"\nExtracted {len(results)} jobs:")
         for job in results:
             print(f"- {job['JobTitle']} at {job['Company']} ({job['URL']})")
-            
-                
+                     
         input("Press Enter")
-        
         
         return results

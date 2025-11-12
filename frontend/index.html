@@ -20,6 +20,32 @@
     <script src="script.js" defer></script>
 </head>
 
+<!-- Sticky Login/Register Dropdown -->
+<div class="position-fixed top-0 end-0 m-3" style="z-index:1050;">
+    <div class="dropdown">
+        <button class="btn btn-outline-primary dropdown-toggle" type="button" id="authDropdown"
+            data-bs-toggle="dropdown" aria-expanded="false">
+            Login / Register
+        </button>
+        <div class="dropdown-menu dropdown-menu-end p-4 shadow" style="min-width: 250px;">
+            <form id="authForm">
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" required>
+                </div>
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">Login</button>
+                    <button type="button" class="btn btn-secondary" id="registerBtn">Register</button>
+                    <button type="button" class="btn btn-danger" id="logoutBtn" style="display:none;">Logout</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <body>
     <h1 class="visually-hidden">Automated Job Application Dashboard</h1>

@@ -51,7 +51,7 @@ def run_scraper(date_posted: str,
             executor.submit(scraper.scrape, date_posted, experience_level, job_title, location): (name, scraper)
             for name, scraper in scrapers
         }
-
+        
         for future in as_completed(futures): # fill the results dictionary
             name, scraper = futures[future]
             try:
@@ -61,7 +61,10 @@ def run_scraper(date_posted: str,
             except Exception as e:
                 print(f"[{name}] Failed: {e}")
             finally:
-                scraper.close()
+                try:
+                    scraper.close()
+                except Exception as e:
+                    print(f"[{name}] Failed: {e}")
 
     print(f"[{datetime.now()}] All scrapers completed. Total: {len(results)} jobs.")
     return results 

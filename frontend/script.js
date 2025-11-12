@@ -60,7 +60,7 @@ class JobApp {
     init() {
         this.setupChoices();
         this.setupEventListeners();
-        this.refreshJobs(); // Initial load
+        //this.refreshJobs(); // Initial load
     }
 
     setupChoices() {
@@ -123,15 +123,104 @@ class JobApp {
         // Handle Resume Parsing
         document.getElementById("resumeForm").addEventListener("submit", async (e) => {
             e.preventDefault(); // stops redirect
+
+
             const fileInput = document.getElementById("resumeFile");
+            if (!fileInput.files || fileInput.files.length === 0) {
+                this.showToast('Please Select a Resume to Parse.', 'danger')
+                return;
+            }
+
             const formData = new FormData();
             formData.append("resumeFile", fileInput.files[0]);
-
-            const res = await fetch("/resume_parse", { method: "POST", body: formData });
-            const data = await res.json();
-            console.log("Parsed resume:", data);
+            
+            try {
+                const res = await fetch("/resume_handler", { method: "POST", body: formData });
+                const data = await res.json();
+                console.log("Parsed resume: ", data);
+            }catch (err){
+                console.error("Error uploading resume: ", err);
+            }
         });
 
+        // Auth dropdown handlers
+        const authForm = document.getElementById('authForm');
+        const registerBtn = document.getElementById('registerBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!email || !password) {
+                this.showToast('Email and password required.', 'danger');
+                return;
+            }
+
+            const loader = this.showLoadingToast('Logging in...');
+            try {
+                const res = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                    credentials: 'include'
+                });
+                if (!res.ok) throw new Error('Login failed');
+                const data = await res.json();
+                this.showToast(`Welcome, ${data.user || 'User'}.`, 'success');
+                document.getElementById('authDropdown').textContent = 'Logged In';
+                logoutBtn.style.display = 'block';
+                await this.refreshJobs()
+            } catch (err) {
+                this.showToast('Invalid credentials.', 'danger');
+                console.error(err);
+            } finally {
+                loader.hide();
+            }
+        });
+
+        registerBtn.addEventListener('click', async () => {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!email || !password) {
+                this.showToast('Email and password required.', 'danger');
+                return;
+            }
+
+            const loader = this.showLoadingToast('Registering...');
+            try {
+                const res = await fetch('/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                    credentials: 'include'
+                });
+                if (!res.ok) throw new Error('Registration failed');
+                const data = await res.json();
+                this.showToast(`Account created for ${data.user || 'user'}.`, 'success');
+                document.getElementById('authDropdown').textContent = 'Logged In';
+                logoutBtn.style.display = 'block';
+            } catch (err) {
+                this.showToast('Registration failed.', 'danger');
+                console.error(err);
+            } finally {
+                loader.hide();
+            }
+        });
+
+        logoutBtn.addEventListener('click', async () => {
+            const res = await fetch('/logout', { method: 'POST', credentials: 'include' });
+            if (res.ok) {
+                this.showToast('Logged out successfully.', 'success');
+                document.getElementById('authDropdown').textContent = 'Login / Register';
+                logoutBtn.style.display = 'none';
+                authForm.reset();
+                this.allJobs = [];
+                this.render();
+            }
+        });
     }
 
     async handleSubmit(e) {
@@ -149,13 +238,15 @@ class JobApp {
 
         const payload = { datePosted, experienceLevel, jobTitle, location };
 
+        const loader = this.showLoadingToast('Searching .......');
+
         try {
             const res = await fetch('/add_job_request', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                credentials: 'include'
             });
-
             if (!res.ok) throw new Error('Submission failed');
 
             const data = await res.json();
@@ -168,13 +259,18 @@ class JobApp {
             this.showToast('Failed to submit job search.', 'danger');
             console.error(err);
         }
+        finally {
+            loader.hide();
+        }
     }
 
     async refreshJobs() {
         const btn = document.getElementById('queryBtn');
         btn.disabled = true;
         try {
-            const res = await fetch('/refresh_jobs');
+            const res = await fetch('/refresh_jobs', {
+                credentials: 'include'
+            });
             const data = await res.json();
             this.allJobs = data.jobs || [];
             this.render();
@@ -202,7 +298,6 @@ class JobApp {
             this.sortState.key = key;
             this.sortState.direction = 'asc';
         }
-
         this.render();
     }
 
@@ -244,7 +339,6 @@ class JobApp {
                 });
             }
         }
-
         return jobs;
     }
 
@@ -312,7 +406,8 @@ class JobApp {
                 const res = await fetch(`/${action}_jobs`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ jobURLs: urls })
+                    body: JSON.stringify({ jobURLs: urls }),
+                    credentials: 'include'
                 });
 
                 if (!res.ok) throw new Error(`Failed to ${action} jobs`);
@@ -329,12 +424,57 @@ class JobApp {
         }
     }
 
-    showToast(message, type = 'primary') {
-        const toast = document.getElementById('job-toast');
+    showLoadingToast(message = 'Loading, please wait...') {
+        const toastEl = document.getElementById('job-toast');
         const body = document.getElementById('toast-message');
-        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+
+        if (!toastEl) return { hide: () => { } };
+
+        // Style for loading spinner toast
+        toastEl.className = 'toast align-items-center text-white bg-secondary border-0';
+        body.innerHTML = `
+        <div class="d-flex align-items-center gap-2">
+            <div class="spinner-border spinner-border-sm text-light" role="status"></div>
+            <span>${message}</span>
+        </div>`;
+
+        // Show the toast
+        setTimeout(() => {
+            const toastInstance = bootstrap.Toast.getOrCreateInstance(toastEl, { autohide: true });
+            toastInstance.show();
+        }, 50);
+
+        // Return controller for hiding it later
+        return {
+            hide: () => {
+                const instance = bootstrap.Toast.getInstance(toastEl);
+                if (instance && toastEl.classList.contains('show')) instance.hide();
+            }
+        };
+    }
+
+    showToast(message, type = 'primary') {
+        const toastEl = document.getElementById('job-toast');
+        const body = document.getElementById('toast-message');
+
+        if (!toastEl) return { hide: () => { } };
+
+        // Reset class and set color
+        toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
         body.textContent = message;
-        new bootstrap.Toast(toast).show();
+
+        // Display toast with short delay
+        setTimeout(() => {
+            const toastInstance = bootstrap.Toast.getOrCreateInstance(toastEl, { autohide: true, delay: 4000 });
+            toastInstance.show();
+        }, 50);
+
+        return {
+            hide: () => {
+                const instance = bootstrap.Toast.getInstance(toastEl);
+                if (instance && toastEl.classList.contains('show')) instance.hide();
+            }
+        };
     }
 }
 

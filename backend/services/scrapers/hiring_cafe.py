@@ -69,10 +69,7 @@ class HiringCafeScraper(BaseScraper):
     
     def _scrape_logic(self, url, job_title, location, date_posted, experience_level):  # core scraping logic
         self._go_to_url(url)
-        
         print("DEBUG current driver URL:", self.driver.current_url)
-
-
         # Wait for job postings to load
         self._wait_for_elements("div.relative.bg-white")
         
@@ -109,6 +106,11 @@ class HiringCafeScraper(BaseScraper):
                 print(f"Salary extraction error: {e}")
                 salary = None
                 
+            try: 
+                skills = card.find_element(
+                    By.CSS_SELECTOR, "div.flex.flex-col.space-y-1 span.line-clamp-2.font-light").text
+            except:
+                skills = "N/A"
                 
             results.append(
                 {
@@ -117,13 +119,13 @@ class HiringCafeScraper(BaseScraper):
                     "Location": location,
                     "Salary": salary,
                     "URL": link,
+                    "Skills": skills,
                     "Status": "New",
                     "DateFound": datetime.today().date().isoformat(),
                 }
             )
             
-            print(card.get_attribute("innerHTML"))
-
+            print(f"Parsed: {title} | {company} | {skills[:60]} | {salary}")
 
         print(f"\nExtracted {len(results) - 1} jobs:")
         

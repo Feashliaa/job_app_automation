@@ -21,15 +21,20 @@ class BaseScraper:
         
         self.driver.delete_all_cookies()
         self.driver.get("about:blank")
-        time.sleep(1)
+        time.sleep(random.uniform(1, 2))
         self.driver.get(url)
-        self.driver.get(url)
-        time.sleep(random.uniform(1, 3))
+        time.sleep(random.uniform(1, 2))
 
     def _wait_for_elements(self, selector, timeout=30):
-        WebDriverWait(self.driver, timeout).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, selector))
-        )
+        try:
+            WebDriverWait(self.driver, timeout).until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, selector))
+            )
+            return self.driver.find_elements(By.CSS_SELECTOR, selector)
+        except Exception:
+            print(f"Timeout waiting for selector: {selector}")
+            return []
+
 
     def close(self):
         self.driver.quit()

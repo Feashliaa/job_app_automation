@@ -613,3 +613,12 @@ h2.card-title {
         box-shadow: 0 0 0 1px white, 0 0 0 3px rgba(0, 115, 177, 0.25);
     }
 }
+
+/* Keep dropdown visible and clean on sticky button */
+.position-fixed.top-0.end-0 {
+    z-index: 1050;
+}
+
+.dropdown-menu {
+    width: 260px;
+}

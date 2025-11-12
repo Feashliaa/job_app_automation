@@ -1,0 +1,54 @@
+services:
+  flask:
+    build: .
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      FLASK_ENV: development           # change to production when ready
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE}
+      SQL_USER: ${MYSQL_USER}
+      SQL_PASSWORD: ${MYSQL_PASSWORD}
+      DATABASE_URL: mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
+      SECRET_KEY: ${SECRET_KEY}
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/app/backend
+      - ./resources:/app/resources
+      - ./styles.css:/app/styles.css
+      - ./script.js:/app/script.js
+      - ./uploads:/app/uploads
+    command: >
+      gunicorn --workers 4
+        --bind 0.0.0.0:5000
+        --keyfile /certs/server.key
+        --certfile /certs/server.crt
+        app:app
+
+    restart: always
+
+  db:
+    image: mysql:8.4
+    restart: always
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+
+volumes:
+  mysql_data:

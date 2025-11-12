@@ -10,7 +10,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
-
 class Scraper:
 
     BASE_URL = "https://hiring.cafe/"
@@ -97,30 +96,33 @@ class Scraper:
                 title = card.find_element(By.CSS_SELECTOR, "span.font-bold.text-start").text
             except:
                 title = "N/A"
-
             try:
                 company = card.find_element(By.CSS_SELECTOR, "span.line-clamp-3.font-light span.font-bold").text
                 # Remove trailing colon, e.g. "Navigant: " → "Navigant"
                 company = company.rstrip(":").strip()
             except:
                 company = "N/A"
-
             try:
                 link = card.find_element(By.CSS_SELECTOR, "a[href*='viewjob']").get_attribute("href")
             except:
                 link = "N/A"
-
+            try: 
+                skills = card.find_element(
+                    By.CSS_SELECTOR, "div.flex.flex-col.space-y-1 span.line-clamp-2.font-light").text
+            except:
+                skills = "N/A"
+                
             results.append(
                 {
                     "JobTitle": title,
                     "Company": company,
                     "Location": location,
                     "URL": link,
+                    "Skills": skills,
                     "Status": "New",
                     "DateFound": datetime.today().date().isoformat(),
                 }
             )
-
 
         print(f"\nExtracted {len(results) - 1} jobs:")
         
@@ -158,6 +160,7 @@ class Scraper:
                     "Company": "Indeed Corp.",
                     "Location": location,
                     "URL": "https://indeed.com/viewjob?jk=abc123",
+                    "Skills": "N/A",
                     "Status": "New",
                     "DateFound": datetime.today().date().isoformat(),
                 }

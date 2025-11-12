@@ -1,3 +1,0 @@
-pip freeze > requirements.txt   - This creates the requirements.txt
-
-python app.py - This Runs the application

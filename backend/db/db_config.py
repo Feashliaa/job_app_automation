@@ -5,16 +5,24 @@ from ..services.utils import load_env_variables
 env_vars = load_env_variables()
 USERNAME = env_vars["SQL_USER"]
 PASSWORD = env_vars["SQL_PASSWORD"]
-HOST = "localhost"
+HOST = "db"
 PORT = 3306
 DATABASE = "jobs"
 
 # SQLAlchemy connection URL
-DB_URL = f"mysql+pymysql://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}?charset=utf8mb4"
+DB_URL = (
+    f"mysql+pymysql://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}?charset=utf8mb4"
+)
 
 # Create engine and session
 # Change "echo" to false if you dont want to see raw SQL queries in the console
-engine = create_engine(DB_URL, echo=True, pool_pre_ping=True)
+engine = create_engine(
+    DB_URL,
+    echo=False,
+    pool_pre_ping=True,
+    pool_size=10,
+    max_overflow=5
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Base class for models
