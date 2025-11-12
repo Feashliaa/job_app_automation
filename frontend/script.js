@@ -86,7 +86,6 @@ class JobApp {
         form.addEventListener('submit', e => this.handleSubmit(e));
 
         document.getElementById('queryBtn').addEventListener('click', () => this.refreshJobs());
-
         document.getElementById('event-handler').addEventListener('click', () => this.handleBatch());
         document.getElementById('process-fab').addEventListener('click', () => this.handleBatch());
 
