@@ -27,8 +27,10 @@ MAX_FILE_SIZE_MB = 5
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
 app.config.update(
-    SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_SECURE=True  # if HTTPS
+    SESSION_COOKIE_SAMESITE="Lax", # or "Strict", set this according to whether cross-site cookies are needed
+    SESSION_COOKIE_SECURE=True,  # if HTTPS
+    SESSION_PERMANENT=True, # make the session permanent, persists after browser close
+    PERMANENT_SESSION_LIFETIME=3600,  # session lifetime in seconds, i.e. 1 hour
 )
 CORS(app, supports_credentials=True)
 
@@ -51,48 +53,43 @@ def serve_static_files(path):
 # API route
 @app.route("/add_job_request", methods=["POST"])
 def add_job_request():
-    db = SessionLocal()
-    try:
-        job_data = request.get_json()
-        user_email = session.get("user")
+    db = SessionLocal() # create a new session
+    try: 
+        job_data = request.get_json() # get the job data from the request
+        user_email = session.get("user") # get the logged-in user's email
         if not user_email:
             return jsonify({"error": "User not logged in"}), 401
 
-        # Load and parse user resume
+        # get and parse user's resume
         parsed_resume = get_user_parsed_resume(db, user_email)
-            
-        # Run scraper for jobs
         scrape_params = extract_scrape_params(job_data)
         scraped_jobs = run_scraper(**scrape_params)
-            
-        with db.begin():
-            
-            # Create and save Job_Query entry
-            query = create_job_query(db, job_data)
 
-            # Create Scrape_Session entry
-            session_entry = create_scrape_session(
-                db, query.query_id, job_data.get("jobTitle"), user_email
-            )
+        query = create_job_query(db, job_data)
+        db.flush()  # ensure query_id exists before use
 
-            # Insert scraped jobs with scores
-            insert_scraped_jobs(
-                db, scraped_jobs, session_entry.scrape_session_id, user_email, parsed_resume
-            )
+        session_entry = create_scrape_session(
+            db, query.query_id, job_data.get("jobTitle"), user_email
+        )
+        db.flush()
 
-            # Mark scrape as complete
-            finalize_scrape_session(
-                db, session_entry, ScrapeStatus.Complete, len(scraped_jobs)
-            )
+        insert_scraped_jobs(
+            db, scraped_jobs, session_entry.scrape_session_id, user_email, parsed_resume
+        )
 
-            # Fetch and return recent jobs
-            jobs_saved = get_new_jobs(db, user_email)
-            return jsonify({"status": "success", "jobs": jobs_saved}), 200
+        finalize_scrape_session(
+            db, session_entry, ScrapeStatus.Complete, len(scraped_jobs)
+        )
+
+        db.commit()  # commit
+
+        jobs_saved = get_new_jobs(db, user_email) # get newly saved jobs
+        return jsonify({"status": "success", "jobs": jobs_saved}), 200
 
     except Exception as e:
+        db.rollback()
         print("Error in add_job_request:", e)
-        return jsonify({"status": "error", "message": "Internal server error"}), 500
-
+        return jsonify({"status": "error", "message": str(e)}), 500
     finally:
         db.close()
 
@@ -100,10 +97,14 @@ def get_user_parsed_resume(db, email):
     # Retrieve and parse the user's resume file.
     user = db.query(User).filter_by(email=email).first()
 
-    if not user or not user.resume_path:
-        raise ValueError("No resume found for this user.")
-
-    return resume_parse(user.resume_path, user.resume_name)
+    if not user or not user.resume_path: 
+        return None
+    
+    try:
+        return resume_parse(user.resume_path, user.resume_name)
+    except Exception as e:
+        print(f"Error parsing resume for {email}: {e}")
+        return None
 
 def create_job_query(db, data):
     # Create and store a Job_Query entry.
@@ -140,6 +141,9 @@ def extract_scrape_params(data):
 
 def insert_scraped_jobs(db, scraped_jobs, session_id, user_email, parsed_resume):
     # Insert all scraped jobs into the database with calculated job scores.
+    
+    has_resume = parsed_resume is not None
+    
     for job in scraped_jobs:
         # Skip duplicates
         existing = (
@@ -151,7 +155,10 @@ def insert_scraped_jobs(db, scraped_jobs, session_id, user_email, parsed_resume)
             continue
 
         # Compute resume-based score
-        job_score = calculate_job_score(parsed_resume, job)
+        if has_resume:
+            job_score = calculate_job_score(parsed_resume, job)
+        else:
+            job_score = None
 
         new_job = Job(
             JobTitle=job["JobTitle"],
@@ -172,9 +179,10 @@ def finalize_scrape_session(db, session_entry, status, total):
     session_entry.status = status
     session_entry.log = f"Scrape completed. Found {total} job listings."
 
+# Get New Jobs for API response
 def get_new_jobs(db, user_email):
     # Return recently scraped jobs formatted for API response.
-    jobs = (
+    jobs = ( 
         db.query(Job)
         .filter(Job.Status == JobStatus.New, Job.user_email == user_email)
         .order_by(Job.DateFound.desc())
@@ -205,7 +213,7 @@ def require_login():
 def remove_jobs():
     if (resp := require_login()):
         return resp
-    try:
+    try: # mark jobs as ignored
         jobs_to_remove = request.get_json().get("jobURLs", [])
         db = SessionLocal()
         for job_url in jobs_to_remove:
@@ -231,7 +239,7 @@ def remove_jobs():
 def apply_jobs():
     if (resp := require_login()):
         return resp
-    try:
+    try: # mark jobs as applied
         jobs_to_apply = request.get_json().get("jobURLs", [])
         db = SessionLocal()
         for job_url in jobs_to_apply:
@@ -272,6 +280,7 @@ def refresh_jobs():
                     "URL": job.URL,
                     "Status": job.Status,
                     "DateFound": str(job.DateFound),
+                    "JobScore": job.job_score if job.job_score is not None else "N/A",
                 }
             )
         return jsonify({"status": "success", "jobs": jobs_list}), 200
@@ -281,8 +290,9 @@ def refresh_jobs():
     finally:
         db.close()
 
+# Resume upload handling
 def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS # check extension
 
 @app.before_request
 def limit_upload_size():
@@ -334,7 +344,7 @@ def resume_handler():
     finally:
         db.close()
 
-
+# Resume parsing function
 def resume_parse(file_path, filename):
     """Extract and structure key resume sections."""
     text = extract_text(file_path)
@@ -375,14 +385,18 @@ def resume_parse(file_path, filename):
         "education": data["education"],
     }
 
-
+# Job score calculation function, using TF-IDF and keyword overlap
 def calculate_job_score(parsed_resume, job):
     """Compute job fit score using TF-IDF + keyword overlap."""
+    
+    if not parsed_resume:
+        return 0.0
+
     skills_dict = parsed_resume.get("skills") or {}
     job_title = job.get("JobTitle", "")
     job_text_raw = f"{job.get('Skills', '')} {job.get('Description', '')}"
 
-    # Combine resume text sections for stronger context
+    # Combine resume text sections for stronger context, lowercased
     resume_text = (
         " ".join(
             f"{category} {' '.join(skills)}"
@@ -396,29 +410,29 @@ def calculate_job_score(parsed_resume, job):
         + parsed_resume.get("projects", "")
     ).lower()
 
-    job_text = f"{job_title} {job_text_raw}".lower()
+    job_text = f"{job_title} {job_text_raw}".lower() # combined job text
 
-    def clean(s):
+    def clean(s): # remove non-letters
         return re.sub(r"[^a-z\s]", " ", s)
 
-    resume_text, job_text = clean(resume_text), clean(job_text)
+    resume_text, job_text = clean(resume_text), clean(job_text) # clean texts
 
-    if not resume_text.strip() or not job_text.strip():
+    if not resume_text.strip() or not job_text.strip(): # empty check
         return 0.0
 
     # TF-IDF cosine similarity
-    vectorizer = TfidfVectorizer(stop_words="english")
-    tfidf = vectorizer.fit_transform([resume_text, job_text])
-    cosine_score = float(cosine_similarity(tfidf)[0, 1])
+    vectorizer = TfidfVectorizer(stop_words="english") # init vectorizer
+    tfidf = vectorizer.fit_transform([resume_text, job_text]) # fit + transform
+    cosine_score = float(cosine_similarity(tfidf)[0, 1]) # get cosine sim
 
     # Keyword overlap
-    resume_words = set(resume_text.split())
-    job_words = set(job_text.split())
-    overlap_ratio = len(resume_words & job_words) / (len(job_words) or 1)
+    resume_words = set(resume_text.split()) # unique words in resume
+    job_words = set(job_text.split()) # unique words in job
+    overlap_ratio = len(resume_words & job_words) / (len(job_words) or 1) # overlap ratio
 
     # Blend + scale
-    blended = (cosine_score * 0.7) + (overlap_ratio * 0.3)
-    return round(min(blended * 200, 100), 2)
+    blended = (cosine_score * 0.7) + (overlap_ratio * 0.3) # weighted blend
+    return round(min(blended * 200, 100), 2) # scale to 0-100
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -445,10 +459,9 @@ def login():
         return jsonify({"error": "Login Failed"}), 500
     finally:
         db.close()
-
 @app.route("/register", methods=["POST"])
 def register():
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) # get the data from the request
     email = data.get("email")
     password = data.get("password")
 
@@ -457,18 +470,18 @@ def register():
 
     db = SessionLocal()
     try:
-        existing = db.query(User).filter(User.email == email).first()
+        existing = db.query(User).filter(User.email == email).first() # check if user exists
         if existing:
             return jsonify({"error": "User already exists"}), 400
 
-        # hash the password
+        # otherwise, new user, hash the password
         hashed_slinging_slasher = generate_password_hash(password)
 
-        new_user = User(email=email, password_hash=hashed_slinging_slasher)
+        new_user = User(email=email, password_hash=hashed_slinging_slasher) 
         db.add(new_user)
         db.commit()
 
-        session["user"] = new_user.email
+        session["user"] = new_user.email # log in the new user
 
         return jsonify({"status": "success", "user": email}), 200
     except Exception as e:
@@ -482,6 +495,13 @@ def register():
 def logout():
     session.pop("user", None)
     return jsonify({"status": "logged_out"}), 200
+
+@app.route("/session_status")
+def session_status():
+    user = session.get("user")
+    if user:
+        return jsonify({"logged_in": True, "user": user})
+    return jsonify({"logged_in": False})
 
 # backend/server.py
 if __name__ == "__main__":

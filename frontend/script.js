@@ -9,6 +9,7 @@ class JobApp {
         this.filterState = { title: '', company: '', location: '', status: '' };
         this.choices = null;
         this.debounceTimer = null;
+        this.loggedIn = false;
 
         // Column config matches original table
         this.columns = [
@@ -23,6 +24,7 @@ class JobApp {
                     ? `<a href="${this.escape(job.URL)}" target="_blank" class="btn btn-sm btn-outline-primary" title="Open job">Link</a>`
                     : ''
             },
+            { key: 'JobScore', label: 'Job Score', render: job => this.escape(job.JobScore || 'N/A') },
             {
                 key: 'Status',
                 label: 'Job Status',
@@ -60,7 +62,7 @@ class JobApp {
     init() {
         this.setupChoices();
         this.setupEventListeners();
-        //this.refreshJobs(); // Initial load
+        this.checkSession();
     }
 
     setupChoices() {
@@ -85,7 +87,14 @@ class JobApp {
         const form = document.getElementById('jobForm');
         form.addEventListener('submit', e => this.handleSubmit(e));
 
-        document.getElementById('queryBtn').addEventListener('click', () => this.refreshJobs());
+        document.getElementById('queryBtn').addEventListener('click', () => {
+            if (!this.loggedIn) {
+                this.showToast('Please log in first.', 'danger');
+                return;
+            }
+            this.refreshJobs(false);
+        });
+
         document.getElementById('event-handler').addEventListener('click', () => this.handleBatch());
         document.getElementById('process-fab').addEventListener('click', () => this.handleBatch());
 
@@ -123,6 +132,11 @@ class JobApp {
         document.getElementById("resumeForm").addEventListener("submit", async (e) => {
             e.preventDefault(); // stops redirect
 
+            // check if logged in
+            if (!this.loggedIn) {
+                this.showToast('Please log in first.', 'danger');
+                return;
+            }
 
             const fileInput = document.getElementById("resumeFile");
             if (!fileInput.files || fileInput.files.length === 0) {
@@ -132,12 +146,13 @@ class JobApp {
 
             const formData = new FormData();
             formData.append("resumeFile", fileInput.files[0]);
-            
+
             try {
                 const res = await fetch("/resume_handler", { method: "POST", body: formData });
                 const data = await res.json();
                 console.log("Parsed resume: ", data);
-            }catch (err){
+                this.showToast('Resume uploaded and parsed successfully.', 'success');
+            } catch (err) {
                 console.error("Error uploading resume: ", err);
             }
         });
@@ -157,7 +172,8 @@ class JobApp {
                 return;
             }
 
-            const loader = this.showLoadingToast('Logging in...');
+            this.setUIBusy(true);
+
             try {
                 const res = await fetch('/login', {
                     method: 'POST',
@@ -170,12 +186,13 @@ class JobApp {
                 this.showToast(`Welcome, ${data.user || 'User'}.`, 'success');
                 document.getElementById('authDropdown').textContent = 'Logged In';
                 logoutBtn.style.display = 'block';
-                await this.refreshJobs()
+                this.loggedIn = true;
+                await this.refreshJobs(true)
             } catch (err) {
                 this.showToast('Invalid credentials.', 'danger');
                 console.error(err);
             } finally {
-                loader.hide();
+                this.setUIBusy(false);
             }
         });
 
@@ -188,7 +205,8 @@ class JobApp {
                 return;
             }
 
-            const loader = this.showLoadingToast('Registering...');
+            this.setUIBusy(true);
+
             try {
                 const res = await fetch('/register', {
                     method: 'POST',
@@ -200,12 +218,13 @@ class JobApp {
                 const data = await res.json();
                 this.showToast(`Account created for ${data.user || 'user'}.`, 'success');
                 document.getElementById('authDropdown').textContent = 'Logged In';
+                this.loggedIn = true;
                 logoutBtn.style.display = 'block';
             } catch (err) {
                 this.showToast('Registration failed.', 'danger');
                 console.error(err);
             } finally {
-                loader.hide();
+                this.setUIBusy(false);
             }
         });
 
@@ -222,9 +241,53 @@ class JobApp {
         });
     }
 
+    setUIBusy(isBusy) {
+        const controls = [
+            '#searchBtn',
+            '#queryBtn',
+            '#event-handler',
+            '#process-fab',
+            '#resumeSubmit',
+            '.clear-filters',
+            '#registerBtn',
+            '#logoutBtn',
+        ];
+        controls.forEach(sel => {
+            const el = document.querySelector(sel);
+            if (el) el.disabled = isBusy;
+        });
+        document.body.style.cursor = isBusy ? 'wait' : 'default';
+    }
+
+    async checkSession() {
+        try {
+            const res = await fetch('/session_status', { credentials: 'include' });
+            const data = await res.json();
+            const logoutBtn = document.getElementById('logoutBtn');
+            this.loggedIn = data.logged_in;
+            if (data.logged_in) {
+                document.getElementById('authDropdown').textContent = 'Logged In';
+                logoutBtn.style.display = 'block';
+                await this.refreshJobs(false);
+            } else {
+                document.getElementById('authDropdown').textContent = 'Login / Register';
+                logoutBtn.style.display = 'none';
+            }
+        } catch (err) {
+            console.error('Error checking session status:', err);
+        }
+    }
+
     async handleSubmit(e) {
         e.preventDefault();
 
+        // check if logged in
+        if (!this.loggedIn) {
+            this.showToast('Please log in first.', 'danger');
+            return;
+        }
+
+        // Gather form data
         const datePosted = document.getElementById('date-posted').value?.trim();
         const experienceLevel = document.getElementById('experience').value?.trim();
         const jobTitle = this.choices.getValue(true);
@@ -234,10 +297,11 @@ class JobApp {
             this.showToast('All fields are required.', 'danger');
             return;
         }
-
         const payload = { datePosted, experienceLevel, jobTitle, location };
 
-        const loader = this.showLoadingToast('Searching .......');
+        // Disable UI during submission
+        this.setUIBusy(true);
+        this.showLoadingToast('Searching . . . . . . .');
 
         try {
             const res = await fetch('/add_job_request', {
@@ -250,22 +314,26 @@ class JobApp {
 
             const data = await res.json();
             this.allJobs = data.jobs || [];
+
+            // Reset form
             document.getElementById('jobForm').reset();
             this.choices.clearInput();
-            this.showToast('Job search submitted successfully.', 'success');
             this.render();
+
+            // Success toast
+            this.showToast('Job search submitted successfully!', 'success');
         } catch (err) {
             this.showToast('Failed to submit job search.', 'danger');
             console.error(err);
         }
         finally {
-            loader.hide();
+            // Re-enable UI
+            this.setUIBusy(false);
         }
     }
 
-    async refreshJobs() {
-        const btn = document.getElementById('queryBtn');
-        btn.disabled = true;
+    async refreshJobs(silent = false) {
+        this.setUIBusy(true);
         try {
             const res = await fetch('/refresh_jobs', {
                 credentials: 'include'
@@ -273,11 +341,12 @@ class JobApp {
             const data = await res.json();
             this.allJobs = data.jobs || [];
             this.render();
+            if (!silent) this.showToast('Job listings updated.', 'success');
         } catch (err) {
-            this.showToast('Failed to load jobs.', 'danger');
+            if (!silent) this.showToast('Failed to load jobs.', 'danger');
             console.error(err);
         } finally {
-            btn.disabled = false;
+            this.setUIBusy(false);
         }
     }
 
@@ -391,12 +460,23 @@ class JobApp {
     }
 
     async handleBatch() {
-        const actions = ['remove', 'apply'];
-        const btn = document.getElementById('event-handler');
-        btn.disabled = true;
-        btn.textContent = 'Processing...';
-
+        this.setUIBusy(true);
         try {
+            // if there are no jobs rendered at all
+            if (!this.allJobs || this.allJobs.length === 0) {
+                this.showToast('No jobs available to process.', 'warning');
+                return;
+            }
+
+            // gather all checked boxes
+            const selected = document.querySelectorAll('.remove-checkbox:checked, .apply-checkbox:checked');
+            if (selected.length === 0) {
+                this.showToast('Please select at least one job first.', 'warning');
+                return;
+            }
+
+            // proceed only when there are selections
+            const actions = ['remove', 'apply'];
             for (const action of actions) {
                 const checked = document.querySelectorAll(`.${action}-checkbox:checked`);
                 const urls = Array.from(checked).map(cb => cb.dataset.jobId).filter(Boolean);
@@ -412,22 +492,30 @@ class JobApp {
                 if (!res.ok) throw new Error(`Failed to ${action} jobs`);
             }
 
-            await this.refreshJobs();
+            await this.refreshJobs(true);
             this.showToast('All selected jobs processed successfully!', 'success');
         } catch (err) {
             this.showToast('Error while processing selected jobs.', 'danger');
             console.error(err);
         } finally {
-            btn.disabled = false;
-            btn.textContent = 'Handle Selected Jobs';
+            this.setUIBusy(false);
         }
     }
 
     showLoadingToast(message = 'Loading, please wait...') {
         const toastEl = document.getElementById('job-toast');
         const body = document.getElementById('toast-message');
-
         if (!toastEl) return { hide: () => { } };
+
+        // hard cancel any running transition
+        toastEl.classList.remove('show');
+        toastEl.offsetHeight;
+
+        // force cleanup of any instance
+        const existingInstance = bootstrap.Toast.getInstance(toastEl);
+        if (existingInstance) {
+            try { existingInstance.dispose(); } catch { }
+        }
 
         // Style for loading spinner toast
         toastEl.className = 'toast align-items-center text-white bg-secondary border-0';
@@ -438,10 +526,8 @@ class JobApp {
         </div>`;
 
         // Show the toast
-        setTimeout(() => {
-            const toastInstance = bootstrap.Toast.getOrCreateInstance(toastEl, { autohide: true });
-            toastInstance.show();
-        }, 50);
+        const toastInstance = bootstrap.Toast.getOrCreateInstance(toastEl, { autohide: false });
+        toastInstance.show();
 
         // Return controller for hiding it later
         return {
@@ -455,18 +541,25 @@ class JobApp {
     showToast(message, type = 'primary') {
         const toastEl = document.getElementById('job-toast');
         const body = document.getElementById('toast-message');
-
         if (!toastEl) return { hide: () => { } };
+
+        // hard cancel any running transition
+        toastEl.classList.remove('show');
+        toastEl.offsetHeight;
+
+        // force cleanup of any instance
+        const existingInstance = bootstrap.Toast.getInstance(toastEl);
+        if (existingInstance) {
+            try { existingInstance.dispose(); } catch { }
+        }
 
         // Reset class and set color
         toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
         body.textContent = message;
 
         // Display toast with short delay
-        setTimeout(() => {
-            const toastInstance = bootstrap.Toast.getOrCreateInstance(toastEl, { autohide: true, delay: 4000 });
-            toastInstance.show();
-        }, 50);
+        const toastInstance = bootstrap.Toast.getOrCreateInstance(toastEl, { autohide: true, delay: 4000 });
+        toastInstance.show();
 
         return {
             hide: () => {

@@ -20,34 +20,36 @@
     <script src="script.js" defer></script>
 </head>
 
-<!-- Sticky Login/Register Dropdown -->
-<div class="position-fixed top-0 end-0 m-3" style="z-index:1050;">
-    <div class="dropdown">
-        <button class="btn btn-outline-primary dropdown-toggle" type="button" id="authDropdown"
-            data-bs-toggle="dropdown" aria-expanded="false">
-            Login / Register
-        </button>
-        <div class="dropdown-menu dropdown-menu-end p-4 shadow" style="min-width: 250px;">
-            <form id="authForm">
-                <div class="mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control" id="email" required>
-                </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label">Password</label>
-                    <input type="password" class="form-control" id="password" required>
-                </div>
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-primary">Login</button>
-                    <button type="button" class="btn btn-secondary" id="registerBtn">Register</button>
-                    <button type="button" class="btn btn-danger" id="logoutBtn" style="display:none;">Logout</button>
-                </div>
-            </form>
+<body>
+
+    <!-- Sticky Login/Register Dropdown -->
+    <div class="position-fixed top-0 end-0 m-3" style="z-index:1050;">
+        <div class="dropdown">
+            <button class="btn btn-outline-primary dropdown-toggle" type="button" id="authDropdown"
+                data-bs-toggle="dropdown" aria-expanded="false">
+                Login / Register
+            </button>
+            <div class="dropdown-menu dropdown-menu-end p-4 shadow" style="min-width: 250px;">
+                <form id="authForm">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" required>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Login</button>
+                        <button type="button" class="btn btn-secondary" id="registerBtn">Register</button>
+                        <button type="button" class="btn btn-danger" id="logoutBtn"
+                            style="display:none;">Logout</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
-<body>
     <h1 class="visually-hidden">Automated Job Application Dashboard</h1>
 
     <main class="container mt-4" role="main">
@@ -63,6 +65,7 @@
                             <option value="" selected>--Choose--</option>
                             <option value="Past Month">Past Month</option>
                             <option value="Past Week">Past Week</option>
+                            <option value="Past 3 Days">Past 3 Days</option>
                             <option value="Past 24 Hours">Past 24 Hours</option>
                         </select>
                     </div>
@@ -197,6 +200,7 @@
                                 <th>Location</th>
                                 <th>Salary</th>
                                 <th>Job URL</th>
+                                <th>Job Score</th>
                                 <th>Job Status</th>
                                 <th>Date Found</th>
                                 <th>Remove</th>
@@ -205,7 +209,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td colspan="9">No job applications found.</td>
+                                <td colspan="10">No job applications found.</td>
                             </tr>
                         </tbody>
                     </table>

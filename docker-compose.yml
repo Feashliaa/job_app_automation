@@ -23,7 +23,7 @@ services:
       - ./script.js:/app/script.js
       - ./uploads:/app/uploads
     command: >
-      gunicorn --workers 4
+      gunicorn --workers 2 --timeout 90
         --bind 0.0.0.0:5000
         --keyfile /certs/server.key
         --certfile /certs/server.crt

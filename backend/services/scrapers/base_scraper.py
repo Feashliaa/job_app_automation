@@ -37,4 +37,7 @@ class BaseScraper:
 
 
     def close(self):
-        self.driver.quit()
+        try:
+            self.driver.quit()
+        except Exception:
+            pass 

@@ -1,3 +1,4 @@
+# Expected env vars: SQL_USER, SQL_PASSWORD (loaded via utils.load_env_variables)
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from ..services.utils import load_env_variables

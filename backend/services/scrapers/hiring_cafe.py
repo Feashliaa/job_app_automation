@@ -3,21 +3,21 @@ import json
 import urllib.parse
 import re
 from datetime import datetime
-from backend.services import utils
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from backend.services.scrapers.base_scraper import BaseScraper
 
 class HiringCafeScraper(BaseScraper):
-    
+
+    JOB_CARD_SELECTOR = "div.relative.xl\\:z-10"
+
     BASE_URL = "https://hiring.cafe/"
 
     DATE_POSTED_MAP = {
-        "Past Month": 61, 
-        "Past Week": 14, 
-        "Past 24 Hours": 2
-        }
+        "Past Month": 61,
+        "Past Week": 14,
+        "Past 3 Days": 4,
+        "Past 24 Hours": 2,
+    }
 
     EXPERIENCE_LEVEL_MAP = {
         "Entry Level": "Entry Level",
@@ -37,12 +37,12 @@ class HiringCafeScraper(BaseScraper):
         "Web Developer": "web+developer",
         "Full-Stack Developer": "full+stack+developer",
     }
-    
+
     def _build_search_url(self, date_posted, experience_level, job_title, location):
         # Map inputs to values or provide fallbacks
         date_posted_val = self.DATE_POSTED_MAP.get(date_posted, 14)
         exp_val = self.EXPERIENCE_LEVEL_MAP.get(experience_level, "Entry Level")
-        
+
         # if typed job title not in map, auto-generate token
         if job_title in self.JOB_TITLE_QUERY_MAP:
             job_val = self.JOB_TITLE_QUERY_MAP[job_title]
@@ -66,37 +66,50 @@ class HiringCafeScraper(BaseScraper):
         encoded_state = urllib.parse.quote(json.dumps(search_state))
 
         return f"{self.BASE_URL}?searchState={encoded_state}"
-    
-    def _scrape_logic(self, url, job_title, location, date_posted, experience_level):  # core scraping logic
+
+    def _scrape_logic(
+        self, url, job_title, location, date_posted, experience_level
+    ):  # core scraping logic
         self._go_to_url(url)
-        print("DEBUG current driver URL:", self.driver.current_url)
+
         # Wait for job postings to load
-        self._wait_for_elements("div.relative.bg-white")
-        
-        job_cards = self.driver.find_elements(By.CSS_SELECTOR, "div.relative.bg-white")
+        self._wait_for_elements(HiringCafeScraper.JOB_CARD_SELECTOR)
+
+        # Extract job cards using the appropriate selector
+        job_cards = self.driver.find_elements(
+            By.CSS_SELECTOR, HiringCafeScraper.JOB_CARD_SELECTOR
+        )
+
         print(f"Found {len(job_cards)} job postings.")
 
         results = []
         for card in job_cards:
             try:
-                title = card.find_element(By.CSS_SELECTOR, "span.font-bold.text-start").text
+                title = card.find_element(
+                    By.CSS_SELECTOR, "span.font-bold.text-start"
+                ).text
             except:
                 title = "N/A"
             try:
-                company = card.find_element(By.CSS_SELECTOR, "span.line-clamp-3.font-light span.font-bold").text
+                company = card.find_element(
+                    By.CSS_SELECTOR, "span.line-clamp-3.font-light span.font-bold"
+                ).text
                 # Remove trailing colon, e.g. "Navigant: " → "Navigant"
                 company = company.rstrip(":").strip()
             except:
                 company = "N/A"
             try:
-                link = card.find_element(By.CSS_SELECTOR, "a[href*='viewjob']").get_attribute("href")
+                link = card.find_element(
+                    By.CSS_SELECTOR, "a[href*='viewjob']"
+                ).get_attribute("href")
             except:
                 link = "N/A"
-                            
+
             salary = None
             try:
-                spans = card.find_elements(By.XPATH, 
-                ".//div[contains(@class, 'flex-wrap')]/span")
+                spans = card.find_elements(
+                    By.XPATH, ".//div[contains(@class, 'flex-wrap')]/span"
+                )
                 for s in spans:
                     text = s.text.strip()
                     if re.search(r"\$\s*\d", text):
@@ -105,13 +118,15 @@ class HiringCafeScraper(BaseScraper):
             except Exception as e:
                 print(f"Salary extraction error: {e}")
                 salary = None
-                
-            try: 
+
+            try:
                 skills = card.find_element(
-                    By.CSS_SELECTOR, "div.flex.flex-col.space-y-1 span.line-clamp-2.font-light").text
+                    By.CSS_SELECTOR,
+                    "div.flex.flex-col.space-y-1 span.line-clamp-2.font-light",
+                ).text
             except:
                 skills = "N/A"
-                
+
             results.append(
                 {
                     "JobTitle": title,
@@ -124,17 +139,15 @@ class HiringCafeScraper(BaseScraper):
                     "DateFound": datetime.today().date().isoformat(),
                 }
             )
-            
+
             print(f"Parsed: {title} | {company} | {skills[:60]} | {salary}")
 
-        print(f"\nExtracted {len(results) - 1} jobs:")
-        
-        # remove the first card, which ususally is an ad, or nothing at all
-        if results:
-            results = results[1:]
+        print(f"\nExtracted {len(results)} jobs:")
+
+        print(f"Total jobs before filtering: {len(results)}")
 
         return results
-    
+
     def scrape(self, date_posted, experience_level, job_title, location):
         print(
             f"[Hiring Cafe] Scraping '{job_title}' in '{location}' "
@@ -144,6 +157,8 @@ class HiringCafeScraper(BaseScraper):
         url = self._build_search_url(date_posted, experience_level, job_title, location)
         print(f"[Hiring Cafe] URL: {url}")
 
-        results = self._scrape_logic(url, job_title, location, date_posted, experience_level)
+        results = self._scrape_logic(
+            url, job_title, location, date_posted, experience_level
+        )
 
         return results

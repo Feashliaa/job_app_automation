@@ -4,7 +4,6 @@ from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from backend.services.scrapers.linkedin_scraper import LinkedInScraper
 from backend.services.scrapers.hiring_cafe import HiringCafeScraper
-from backend.services.scraper import Scraper
 
 def run_scraper(date_posted: str, 
                 experience_level: str, 
@@ -17,34 +16,13 @@ def run_scraper(date_posted: str,
 
     print(f"[{datetime.now()}] Starting scrape for ...")
 
-    """     # Original Scraper
-    
-    #scraper = Scraper()
-    #hiring_cafe_scraper = HiringCafeScraper()
-    linked_in_scraper = LinkedInScraper()
-    
-    try:
-        #results = scraper.scrape(date_posted, experience_level, job_title, location)
-        #results = hiring_cafe_scraper.scrape(date_posted, experience_level, job_title, location)
-        results = linked_in_scraper.scrape(date_posted, experience_level, job_title, location)
-        
-    finally:
-        #scraper.close()
-        #hiring_cafe_scraper.close()
-        linked_in_scraper.close()
-
-
-    print(f"[{datetime.now()}] Scrape completed. Found {len(results)} job(s).")
-    return results   """
-    
-    
-       
     scrapers = [
         ("Hiring Cafe", HiringCafeScraper()),
+        #("LinkedIn", LinkedInScraper())
     ]
     
     results = []
-    
+    start = datetime.now()
     # Run each scraper in its own thread
     with ThreadPoolExecutor(max_workers=len(scrapers)) as executor:
         futures = { # expected items
@@ -66,5 +44,6 @@ def run_scraper(date_posted: str,
                 except Exception as e:
                     print(f"[{name}] Failed: {e}")
 
+    print(f"Total scrape time: {(datetime.now() - start).total_seconds():.2f}s")
     print(f"[{datetime.now()}] All scrapers completed. Total: {len(results)} jobs.")
     return results 
