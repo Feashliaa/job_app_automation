@@ -27,9 +27,6 @@ USER_AGENTS = [
 # Chrome versions that are fresh
 CHROME_VERSIONS = [str(v) for v in range(120, 140)]
 
-# Random language
-LANGUAGES = ["en-US", "en-GB", "de-DE", "fr-FR", "es-ES"]
-
 def load_env_variables():
     """Load and return required environment variables."""
     load_dotenv()
@@ -63,7 +60,7 @@ def _random_window_size() -> str:
 def _random_lang() -> str:
     return random.choice(LANGUAGES)
 
-def create_driver(headless: bool = True):
+def create_driver(headless: bool = False):
     """Create and return a Selenium WebDriver instance."""
     options = uc.ChromeOptions()
     if headless:
@@ -78,12 +75,6 @@ def create_driver(headless: bool = True):
     options.add_argument(f"--window-size={_random_window_size()}")
     options.add_argument(f"user-agent={_random_user_agent()}")
 
-    lang = _random_lang()
-    options.add_argument(f"--lang={lang}")
-    options.add_experimental_option(
-        "prefs", {"intl.accept_languages": lang}
-    )
-    
 
     #  binary paths inside the container
     #chrome_path = os.getenv("CHROMIUM_PATH", "/usr/bin/chromium")
