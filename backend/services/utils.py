@@ -57,9 +57,6 @@ def _random_window_size() -> str:
     h += random.randint(-15, 15)
     return f"{w},{h}"
 
-def _random_lang() -> str:
-    return random.choice(LANGUAGES)
-
 def create_driver(headless: bool = False):
     """Create and return a Selenium WebDriver instance."""
     options = uc.ChromeOptions()
