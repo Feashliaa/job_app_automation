@@ -371,6 +371,13 @@ h2.card-title {
     cursor: pointer;
 }
 
+/* pagination menu, make the first element left aligned, everything else centered */
+.pagination-controls #page-info {
+    margin-right: auto;
+}  
+
+
+
 
 /* ========================================
    MOBILE CARD MODE

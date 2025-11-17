@@ -92,7 +92,7 @@ class JobApp {
                 this.showToast('Please log in first.', 'danger');
                 return;
             }
-            this.refreshJobs(false);
+            this.loadPage(1, { silent: false });
         });
 
         document.getElementById('event-handler').addEventListener('click', () => this.handleBatch());
@@ -195,7 +195,7 @@ class JobApp {
                 document.getElementById('authDropdown').textContent = 'Logged In';
                 logoutBtn.style.display = 'block';
                 this.loggedIn = true;
-                await this.refreshJobs(true)
+                await this.loadPage(1, { silent: true });
             } catch (err) {
                 this.showToast('Invalid credentials.', 'danger');
                 console.error(err);
@@ -247,6 +247,33 @@ class JobApp {
                 this.render();
             }
         });
+
+        document.getElementById('prev-page-btn').addEventListener('click', () => {
+            if (this.currentPage > 1) {
+                this.loadPage(this.currentPage - 1);
+            }
+        });
+
+        document.getElementById('next-page-btn').addEventListener('click', () => {
+            if (this.currentPage < this.totalPages) {
+                this.loadPage(this.currentPage + 1);
+            }
+        });
+
+        document.getElementById('first-page-btn').addEventListener('click', () => {
+            if (this.currentPage > 1) {
+                this.loadPage(1);
+            }
+        });
+
+        document.getElementById('last-page-btn').addEventListener('click', () => {
+            if (this.currentPage < this.totalPages) {
+                this.loadPage(this.totalPages);
+            }
+        });
+
+
+
     }
 
     setUIBusy(isBusy) {
@@ -276,7 +303,7 @@ class JobApp {
             if (data.logged_in) {
                 document.getElementById('authDropdown').textContent = 'Logged In';
                 logoutBtn.style.display = 'block';
-                await this.refreshJobs(false);
+                await this.loadPage(1, { silent: false });
             } else {
                 document.getElementById('authDropdown').textContent = 'Login / Register';
                 logoutBtn.style.display = 'none';
@@ -320,13 +347,17 @@ class JobApp {
             });
             if (!res.ok) throw new Error('Submission failed');
 
+            // ignore for now, just reload jobs
             const data = await res.json();
-            this.allJobs = data.jobs || [];
+
 
             // Reset form
             document.getElementById('jobForm').reset();
             this.choices.clearInput();
-            this.render();
+
+
+            // reload 1 page after submission
+            await this.loadPage(1, { silent: true });
 
             // Success toast
             this.showToast('Job search submitted successfully!', 'success');
@@ -340,21 +371,55 @@ class JobApp {
         }
     }
 
-    async refreshJobs(silent = false) {
+    async loadPage(page = 1, { silent = false, maxAgeDays = this.getMaxAgeDays() } = {}) {
         this.setUIBusy(true);
         try {
-            const res = await fetch('/refresh_jobs', {
+            const params = new URLSearchParams({
+                page: page,
+                page_size: 10,
+                max_age_days: maxAgeDays
+            });
+
+            const res = await fetch(`/refresh_jobs?${params.toString()}`, {
                 credentials: 'include'
             });
+
+            if (!res.ok) throw new Error('Failed to load jobs');
+
             const data = await res.json();
+
+            this.currentPage = data.page;
+            this.totalPages = data.total_pages;
+
+            // set the number of pages info
+            document.getElementById('page-info').textContent =
+                `Page ${this.currentPage} of ${this.totalPages}`;
+
+            // add page of jobs
             this.allJobs = data.jobs || [];
+
             this.render();
-            if (!silent) this.showToast('Job listings updated.', 'success');
+
+            if (!silent) {
+                this.showToast(`Page ${this.currentPage} loaded.`, 'success');
+            }
+
         } catch (err) {
             if (!silent) this.showToast('Failed to load jobs.', 'danger');
             console.error(err);
         } finally {
             this.setUIBusy(false);
+        }
+    }
+
+    getMaxAgeDays() {
+        const val = document.getElementById('date-posted').value;
+        switch (val) {
+            case "Past 24 Hours": return 1;
+            case "Past 3 Days": return 3;
+            case "Past Week": return 7;
+            case "Past Month": return 30;
+            default: return 14; // fallback default
         }
     }
 
@@ -410,9 +475,6 @@ class JobApp {
 
         return { min, max };
     }
-
-
-
 
     getFilteredAndSortedJobs() {
         let jobs = [...this.allJobs];
@@ -560,7 +622,8 @@ class JobApp {
                 if (!res.ok) throw new Error(`Failed to ${action} jobs`);
             }
 
-            await this.refreshJobs(true);
+            await this.loadPage(1, { silent: true });
+
             this.showToast('All selected jobs processed successfully!', 'success');
         } catch (err) {
             this.showToast('Error while processing selected jobs.', 'danger');
