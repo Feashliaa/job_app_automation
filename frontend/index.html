@@ -142,7 +142,7 @@
                 <div class="filter-panel card p-3 mb-3">
                     <button class="btn btn-primary w-100 filter-toggle" aria-expanded="false"
                         aria-controls="filter-controls">
-                        <span class="filter-icon">🔍</span> Filters
+                        <span class="filter-icon">🔍 Filters </span>
                     </button>
                     <div id="filter-controls" class="filter-controls collapse" style="display: none;">
                         <div class="row g-2 mt-2">
@@ -176,6 +176,16 @@
                                         <option value="Applied">Applied</option>
                                         <option value="Ignored">Ignored</option>
                                     </select>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-group">
+                                    <label for="filter-salary" class="form-label">Salary</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="text" id="filter-salary" class="form-control" placeholder="50000"
+                                            aria-label="Filter by salary">
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-12">

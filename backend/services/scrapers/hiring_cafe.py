@@ -20,6 +20,7 @@ class HiringCafeScraper(BaseScraper):
     }
 
     EXPERIENCE_LEVEL_MAP = {
+        "No Prior Experience": "No Prior Experience",
         "Entry Level": "Entry Level",
         "Mid Level": "Mid Level",
         "Senior Level": "Senior Level",
@@ -39,9 +40,25 @@ class HiringCafeScraper(BaseScraper):
     }
 
     def _build_search_url(self, date_posted, experience_level, job_title, location):
+        
         # Map inputs to values or provide fallbacks
         date_posted_val = self.DATE_POSTED_MAP.get(date_posted, 14)
         exp_val = self.EXPERIENCE_LEVEL_MAP.get(experience_level, "Entry Level")
+        
+          # Normalize experience / seniority
+        exp_norm = experience_level.strip().lower()
+        
+        # if entry level, add in "No Prior Experience" as well
+        if exp_norm in (
+                "entry level",
+                "entry-level",
+                "no prior experience",
+                "no prior experience required",
+            ):
+            seniority_values = ["Entry Level", "No Prior Experience Required"]
+        else:
+            seniority_values = [exp_val]
+            
 
         # if typed job title not in map, auto-generate token
         if job_title in self.JOB_TITLE_QUERY_MAP:
@@ -59,7 +76,7 @@ class HiringCafeScraper(BaseScraper):
             "dateFetchedPastNDays": date_posted_val,
             "searchQuery": job_val,
             "workplaceTypes": workplace_type,
-            "seniorityLevel": [exp_val],
+            "seniorityLevel": seniority_values,
         }
 
         # URL-encode the JSON
@@ -67,9 +84,7 @@ class HiringCafeScraper(BaseScraper):
 
         return f"{self.BASE_URL}?searchState={encoded_state}"
 
-    def _scrape_logic(
-        self, url, job_title, location, date_posted, experience_level
-    ):  # core scraping logic
+    def _scrape_logic(self, url, location):  # core scraping logic
         self._go_to_url(url)
 
         # Wait for job postings to load
@@ -157,8 +172,6 @@ class HiringCafeScraper(BaseScraper):
         url = self._build_search_url(date_posted, experience_level, job_title, location)
         print(f"[Hiring Cafe] URL: {url}")
 
-        results = self._scrape_logic(
-            url, job_title, location, date_posted, experience_level
-        )
+        results = self._scrape_logic(url, location)
 
         return results

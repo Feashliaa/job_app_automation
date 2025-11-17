@@ -8,6 +8,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
+CAUGHT_UP = "__CAUGHT_UP__"
+
 class BaseScraper:
     def __init__(self):
         self.driver = utils.create_driver()
@@ -16,9 +18,6 @@ class BaseScraper:
         self.email_password = env_vars["EMAIL_PASSWORD"]
 
     def _go_to_url(self, url):
-        
-        print(f"DEBUG navigating to: {url}")
-        
         self.driver.delete_all_cookies()
         self.driver.get("about:blank")
         time.sleep(random.uniform(1, 2))
@@ -28,8 +27,20 @@ class BaseScraper:
     def _wait_for_elements(self, selector, timeout=30):
         try:
             WebDriverWait(self.driver, timeout).until(
-                EC.presence_of_all_elements_located((By.CSS_SELECTOR, selector))
+                EC.any_of(
+                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, selector)),
+                    EC.presence_of_all_elements_located((By.XPATH, "//*[contains(text(), \"You're all caught up!\")]")),
+                )
             )
+            
+               # Check which one appeared
+            caught_up_els = self.driver.find_elements(
+                By.XPATH, "//*[contains(text(), \"You're all caught up!\")]"
+            )
+            if caught_up_els:
+                print("Detected: You're all caught up!")
+                return CAUGHT_UP
+            
             return self.driver.find_elements(By.CSS_SELECTOR, selector)
         except Exception:
             print(f"Timeout waiting for selector: {selector}")

@@ -6,7 +6,7 @@ services:
     env_file:
       - .env
     environment:
-      FLASK_ENV: development           # change to production when ready
+      FLASK_ENV: development
       DB_HOST: db
       DB_PORT: 3306
       DB_NAME: ${MYSQL_DATABASE}
@@ -19,17 +19,10 @@ services:
     volumes:
       - ./backend:/app/backend
       - ./resources:/app/resources
-      - ./styles.css:/app/styles.css
-      - ./script.js:/app/script.js
+      - ./frontend:/app/frontend 
       - ./uploads:/app/uploads
-    command: >
-      gunicorn --workers 2 --timeout 90
-        --bind 0.0.0.0:5000
-        --keyfile /certs/server.key
-        --certfile /certs/server.crt
-        app:app
-
     restart: always
+
 
   db:
     image: mysql:8.4

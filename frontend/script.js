@@ -6,7 +6,7 @@ class JobApp {
     constructor() {
         this.allJobs = [];
         this.sortState = { key: null, direction: 'asc' };
-        this.filterState = { title: '', company: '', location: '', status: '' };
+        this.filterState = { title: '', company: '', location: '', status: '', salary: '' };
         this.choices = null;
         this.debounceTimer = null;
         this.loggedIn = false;
@@ -103,8 +103,16 @@ class JobApp {
             const toggle = document.querySelector('.filter-toggle');
             const controls = document.getElementById('filter-controls');
             const expanded = toggle.getAttribute('aria-expanded') === 'true';
+
+            // open/close styles
             controls.style.display = expanded ? 'none' : 'flex';
             toggle.setAttribute('aria-expanded', !expanded);
+
+            if (expanded) {
+                toggle.classList.remove('open');
+            } else {
+                toggle.classList.add('open');
+            }
         });
 
         // Filter inputs (debounced)
@@ -369,15 +377,75 @@ class JobApp {
         this.render();
     }
 
+    parseSalary(salaryString) {
+        if (!salaryString) return null;
+
+        // Remove $, commas, whitespace
+        let s = salaryString.replace(/\$/g, '').replace(/,/g, '').trim().toLowerCase();
+
+        // Detect hourly or yearly
+        const isHourly = s.includes('/hr');
+        const isYearly = s.includes('/yr') || s.includes('/year');
+
+        // Extract numeric part before /hr or /yr
+        let parts = s.split('/')[0];
+        let range = parts.split('-').map(x => x.trim());
+
+        const convert = (val) => {
+            if (!val) return null;
+            if (val.includes('k')) return parseFloat(val) * 1000;
+            return parseFloat(val);
+        };
+
+        let min = convert(range[0]);
+        let max = convert(range[1] ?? range[0]);
+
+        if (min == null || isNaN(min)) return null;
+
+        // Normalize hourly → yearly
+        if (isHourly) {
+            min *= 2080;
+            max *= 2080;
+        }
+
+        return { min, max };
+    }
+
+
+
+
     getFilteredAndSortedJobs() {
         let jobs = [...this.allJobs];
 
+        const salaryFilter = this.filterState.salary
+            ? parseInt(this.filterState.salary, 10)
+            : null;
+
         // Filter
         jobs = jobs.filter(job => {
-            return (!this.filterState.title || (job.JobTitle?.toLowerCase().includes(this.filterState.title.toLowerCase()))) &&
-                (!this.filterState.company || (job.Company?.toLowerCase().includes(this.filterState.company.toLowerCase()))) &&
-                (!this.filterState.location || (job.Location?.toLowerCase().includes(this.filterState.location.toLowerCase()))) &&
-                (!this.filterState.status || job.Status === this.filterState.status);
+            // Text filters
+            const matchesText =
+                (!this.filterState.title ||
+                    job.JobTitle?.toLowerCase().includes(this.filterState.title.toLowerCase())) &&
+                (!this.filterState.company ||
+                    job.Company?.toLowerCase().includes(this.filterState.company.toLowerCase())) &&
+                (!this.filterState.location ||
+                    job.Location?.toLowerCase().includes(this.filterState.location.toLowerCase())) &&
+                (!this.filterState.status ||
+                    job.Status === this.filterState.status);
+
+            if (!matchesText) return false;
+
+            // Salary filter
+            if (salaryFilter) {
+                const parsed = this.parseSalary(job.Salary);
+                if (!parsed) return false;
+
+                // allow match if salary range reaches user's minimum
+                if (parsed.max < salaryFilter) return false;
+            }
+
+            return true;
         });
 
         // Prioritize "New"

@@ -1,12 +1,8 @@
 # backend/services/utils.py
 
-import os, re, random, json
+import os, re, random
 import undetected_chromedriver as uc
 from dotenv import load_dotenv
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from urllib.parse import urlencode
 
 WINDOW_SIZES = [
@@ -55,7 +51,6 @@ def _random_user_agent() -> str:
 
 def _random_window_size() -> str:
     w, h = random.choice(WINDOW_SIZES)
-    # Add a tiny jitter (±0-30 px) so the size isn’t *exactly* the same every time
     w += random.randint(-15, 15)
     h += random.randint(-15, 15)
     return f"{w},{h}"
@@ -63,34 +58,31 @@ def _random_window_size() -> str:
 def _random_lang() -> str:
     return random.choice(LANGUAGES)
 
-def create_driver(headless: bool = True):
-    """Create and return a Selenium WebDriver instance."""
+def create_driver(headless: bool = False):
     options = uc.ChromeOptions()
+    
     if headless:
         options.add_argument("--headless=new")
-        
+    else:
+        os.environ["DISPLAY"] = os.environ.get("DISPLAY", ":99")
+
+
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
     options.add_argument("--disable-blink-features=AutomationControlled")
     options.add_argument("--disable-site-isolation-trials")
-
     options.add_argument(f"--window-size={_random_window_size()}")
     options.add_argument(f"user-agent={_random_user_agent()}")
-
+    options.add_argument("--disable-gpu")
+    options.add_argument("--disable-webrtc")
     lang = _random_lang()
     options.add_argument(f"--lang={lang}")
-    options.add_experimental_option(
-        "prefs", {"intl.accept_languages": lang}
-    )
     
-
-    #  binary paths inside the container
-    #chrome_path = os.getenv("CHROMIUM_PATH", "/usr/bin/chromium")
-    #driver_path = os.getenv("CHROMEDRIVER_PATH", "/usr/bin/chromedriver")
-
-    #options.binary_location = chrome_path
-    #service = Service(driver_path)
+    
+    options.add_experimental_option("prefs", {"intl.accept_languages": lang})
 
     driver = uc.Chrome(options=options, headless=headless)
+    
+    print("navigator.webdriver:", driver.execute_script("return navigator.webdriver"))
+
     return driver
