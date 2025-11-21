@@ -85,10 +85,35 @@ class HiringCafeScraper(BaseScraper):
         return f"{self.BASE_URL}?searchState={encoded_state}"
 
     def _scrape_logic(self, url, location):  # core scraping logic
+        
+        print("inner:", self.driver.execute_script("return window.innerWidth"))
+        
         self._go_to_url(url)
+        
+        print("screen:", self.driver.execute_script("return screen.width"))
+        
+        try:
+            ok = self.driver.save_screenshot("/app/uploads/debug_wait.png")
+            print("SCREENSHOT RETURN VALUE:", ok)
+        except Exception as e:
+            print("SCREENSHOT ERROR:", e)
+        
+        print("\n--- DEBUG PAGE INFO ---")
+        print("URL:", self.driver.current_url)
+        print("Title:", self.driver.title)
+        print("Body Snippet:\n", self.driver.find_element(By.TAG_NAME, "body").text[:15000])
+        print("--- END DEBUG ---\n")
+        
+        logs = self.driver.get_log("browser")
+        for entry in logs:
+            print("BROWSER LOG:", entry)
 
         # Wait for job postings to load
-        self._wait_for_elements(HiringCafeScraper.JOB_CARD_SELECTOR)
+        result = self._wait_for_elements(HiringCafeScraper.JOB_CARD_SELECTOR)
+        
+        if result == "__CAUGHT_UP__":
+            print("No new job postings found (caught up).")
+            return []
 
         # Extract job cards using the appropriate selector
         job_cards = self.driver.find_elements(

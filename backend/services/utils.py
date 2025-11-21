@@ -20,11 +20,6 @@ USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{ver}.0.0.0 Safari/537.36 Edg/{ver}.0.0.0",
 ]
 
-# Chrome versions that are fresh
-CHROME_VERSIONS = [str(v) for v in range(120, 140)]
-
-# Random language
-LANGUAGES = ["en-US", "en-GB", "de-DE", "fr-FR", "es-ES"]
 
 def load_env_variables():
     """Load and return required environment variables."""
@@ -44,44 +39,27 @@ def build_url(base_url: str, params: dict) -> str:
     """Build a URL with encoded query parameters."""
     return f"{base_url}?{urlencode(params)}"
 
-def _random_user_agent() -> str:
-    tmpl = random.choice(USER_AGENTS)
-    ver  = random.choice(CHROME_VERSIONS)
-    return tmpl.format(ver=ver)
-
-def _random_window_size() -> str:
-    w, h = random.choice(WINDOW_SIZES)
-    w += random.randint(-15, 15)
-    h += random.randint(-15, 15)
-    return f"{w},{h}"
-
-def _random_lang() -> str:
-    return random.choice(LANGUAGES)
-
 def create_driver(headless: bool = False):
     options = uc.ChromeOptions()
-    
-    if headless:
-        options.add_argument("--headless=new")
-    else:
-        os.environ["DISPLAY"] = os.environ.get("DISPLAY", ":99")
 
+    if not headless:
+        os.environ["DISPLAY"] = os.environ.get("DISPLAY", ":99")
+    else:
+        options.add_argument("--headless=new")
 
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument("--disable-site-isolation-trials")
-    options.add_argument(f"--window-size={_random_window_size()}")
-    options.add_argument(f"user-agent={_random_user_agent()}")
+    options.add_argument("--allow-insecure-localhost")
+    
     options.add_argument("--disable-gpu")
-    options.add_argument("--disable-webrtc")
-    lang = _random_lang()
-    options.add_argument(f"--lang={lang}")
-    
-    
-    options.add_experimental_option("prefs", {"intl.accept_languages": lang})
+    options.add_argument("--use-gl=swiftshader")
+    options.add_argument("--enable-unsafe-swiftshader")
 
-    driver = uc.Chrome(options=options, headless=headless)
+    driver = uc.Chrome(options=options,
+                       headless=headless, 
+                       use_subprocess=False, 
+                       enable_logging=True,
+                       browser_executable_path="/usr/bin/google-chrome")
     
     print("navigator.webdriver:", driver.execute_script("return navigator.webdriver"))
 

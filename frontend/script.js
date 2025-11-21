@@ -10,6 +10,8 @@ class JobApp {
         this.choices = null;
         this.debounceTimer = null;
         this.loggedIn = false;
+        this.lastToastMessage = null;
+        this.lastToastTime = 0;
 
         // Column config matches original table
         this.columns = [
@@ -87,12 +89,22 @@ class JobApp {
         const form = document.getElementById('jobForm');
         form.addEventListener('submit', e => this.handleSubmit(e));
 
-        document.getElementById('queryBtn').addEventListener('click', () => {
+        document.getElementById('refresh').addEventListener('click', () => {
+            this.setUIBusy(true);
+            // check if logged in
             if (!this.loggedIn) {
                 this.showToast('Please log in first.', 'danger');
                 return;
             }
-            this.refreshJobs(false);
+
+            try {
+                this.refreshJobs(false);
+            } catch (err) {
+                this.showToast('Failed to refresh jobs.', 'danger');
+                console.error(err);
+            } finally {
+                this.setUIBusy(false);
+            }
         });
 
         document.getElementById('event-handler').addEventListener('click', () => this.handleBatch());
@@ -131,8 +143,13 @@ class JobApp {
             this.render();
         });
 
-        // Sorting
+        // Sorting (disable sort for Apply and Remove columns)
         document.querySelectorAll('.job-table thead th').forEach(th => {
+            const label = th.textContent.trim();
+            if (label === 'Apply' || label === 'Remove') {
+                th.classList.add('no-sort');
+                return;
+            }
             th.addEventListener('click', () => this.handleSort(th));
         });
 
@@ -252,7 +269,7 @@ class JobApp {
     setUIBusy(isBusy) {
         const controls = [
             '#searchBtn',
-            '#queryBtn',
+            '#refresh',
             '#event-handler',
             '#process-fab',
             '#resumeSubmit',
@@ -410,9 +427,6 @@ class JobApp {
 
         return { min, max };
     }
-
-
-
 
     getFilteredAndSortedJobs() {
         let jobs = [...this.allJobs];
@@ -607,6 +621,14 @@ class JobApp {
     }
 
     showToast(message, type = 'primary') {
+
+        const now = Date.now();
+        if (this.lastToastMessage === message && (now - this.lastToastTime) < 2000) {
+            return; // skip showing the same message within 2 seconds
+        }
+        this.lastToastMessage = message;
+        this.lastToastTime = now;
+
         const toastEl = document.getElementById('job-toast');
         const body = document.getElementById('toast-message');
         if (!toastEl) return { hide: () => { } };

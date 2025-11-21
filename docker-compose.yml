@@ -14,6 +14,7 @@ services:
       SQL_PASSWORD: ${MYSQL_PASSWORD}
       DATABASE_URL: mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
       SECRET_KEY: ${SECRET_KEY}
+      DISPLAY: ":99"
     depends_on:
       - db
     volumes:

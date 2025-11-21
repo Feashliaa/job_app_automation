@@ -1,10 +1,11 @@
 #!/bin/bash
 # Exits immediately if a command exits with a non-zero status
 set -e
+export DISPLAY=:99
 
-# Start Xvfb - Sets display :99, and sets screen size to 1920x1080 with 24-bit color depth
+# Start Xvfb - Sets display :99, and sets screen size to 2560x1440 with 24-bit color depth
 echo "Starting Xvfb..."
-Xvfb :99 -screen 0 1920x1080x24 &
+Xvfb :99 -screen 0 2560x1440x24 &
 sleep 1
 
 # Run gunicorn - Set binding to all interfaces on port 5000 with a timeout of 60 seconds

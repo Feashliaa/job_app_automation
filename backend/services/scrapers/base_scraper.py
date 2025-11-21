@@ -26,25 +26,30 @@ class BaseScraper:
 
     def _wait_for_elements(self, selector, timeout=30):
         try:
+            
+            self.driver.save_screenshot("/app/debug_wait.png")  # Debug screenshot
+            
             WebDriverWait(self.driver, timeout).until(
                 EC.any_of(
                     EC.presence_of_all_elements_located((By.CSS_SELECTOR, selector)),
-                    EC.presence_of_all_elements_located((By.XPATH, "//*[contains(text(), \"You're all caught up!\")]")),
+                    EC.presence_of_all_elements_located((By.XPATH, "//*[contains(text(), \"You're all caught up!\")]"))
                 )
             )
-            
-               # Check which one appeared
-            caught_up_els = self.driver.find_elements(
+
+            caught_up = self.driver.find_elements(
                 By.XPATH, "//*[contains(text(), \"You're all caught up!\")]"
             )
-            if caught_up_els:
-                print("Detected: You're all caught up!")
-                return CAUGHT_UP
-            
-            return self.driver.find_elements(By.CSS_SELECTOR, selector)
+
+            if caught_up:
+                return {"status": "caught_up", "elements": []}
+
+            elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+            return {"status": "ok", "elements": elements}
+
         except Exception:
             print(f"Timeout waiting for selector: {selector}")
-            return []
+            return {"status": "timeout", "elements": []}
+
 
 
     def close(self):
