@@ -85,7 +85,6 @@
                     <div class="form-group">
                         <label for="job-title" class="form-label">Job Title</label>
                         <select id="job-title" name="job-title" class="form-select" required>
-                            <option value="">--Choose--</option>
                             <option value="Software Engineer">Software Engineer</option>
                             <option value="Software Developer">Software Developer</option>
                             <option value="Quality Assurance Engineer">Quality Assurance Engineer</option>
@@ -123,7 +122,7 @@
                 <!-- Submit and Query Div -->
                 <div class="row mt-3 g-2">
                     <div class="col-6">
-                        <button type="button" id="queryBtn" class="btn btn-secondary w-100">
+                        <button type="button" id="refresh" class="btn btn-secondary w-100">
                             Query Database
                         </button>
                     </div>
@@ -142,7 +141,7 @@
                 <div class="filter-panel card p-3 mb-3">
                     <button class="btn btn-primary w-100 filter-toggle" aria-expanded="false"
                         aria-controls="filter-controls">
-                        <span class="filter-icon">🔍</span> Filters
+                        <span class="filter-icon">🔍 Filters </span>
                     </button>
                     <div id="filter-controls" class="filter-controls collapse" style="display: none;">
                         <div class="row g-2 mt-2">
@@ -176,6 +175,16 @@
                                         <option value="Applied">Applied</option>
                                         <option value="Ignored">Ignored</option>
                                     </select>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="form-group">
+                                    <label for="filter-salary" class="form-label">Salary</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="text" id="filter-salary" class="form-control" placeholder="50,000"
+                                            aria-label="Filter by salary">
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-12">

@@ -1,34 +1,26 @@
-# backend/services/utils.py
-
-import os, re, random, json
-import undetected_chromedriver as uc
+import os
+import re
+import random
+from typing import Optional, Dict, Any
 from dotenv import load_dotenv
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from urllib.parse import urlencode
+from dataclasses import dataclass
 
+from playwright.async_api import async_playwright, Playwright, Browser, BrowserContext
+
+# -----------------------------
+# RANDOMIZATION CONSTANTS
+# -----------------------------
 WINDOW_SIZES = [
-    (1920, 1080), (1366, 768), (1536, 864), (1440, 900), (1280, 720),
-    (1680, 1050), (1600, 900), (2560, 1440), (1920, 1200)
+    (1920, 1080), (1366, 768), (1536, 864), (1440, 900),
+    (1280, 720), (1680, 1050), (1600, 900), (2560, 1440),
+    (1920, 1200)
 ]
 
-USER_AGENTS = [
-    # Chrome 120-140 on Windows 10/11
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{ver}.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 11.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{ver}.0.0.0 Safari/537.36",
-    # Chrome on macOS
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{ver}.0.0.0 Safari/537.36",
-    # Edge on Windows
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{ver}.0.0.0 Safari/537.36 Edg/{ver}.0.0.0",
-]
-
-# Chrome versions that are fresh
-CHROME_VERSIONS = [str(v) for v in range(120, 140)]
-
+# -----------------------------
+# ENV LOADER
+# -----------------------------
 def load_env_variables():
-    """Load and return required environment variables."""
     load_dotenv()
     return {
         "SQL_PASSWORD": os.getenv("SQL_PASSWORD"),
@@ -37,48 +29,65 @@ def load_env_variables():
         "EMAIL_PASSWORD": os.getenv("EMAIL_PASSWORD"),
     }
 
+# -----------------------------
+# HELPERS
+# -----------------------------
 def sanitize_filename(filename: str) -> str:
-    """Remove invalid filename characters."""
     return re.sub(r'[\\/*?:"<>|]', "_", filename).strip()
 
 def build_url(base_url: str, params: dict) -> str:
-    """Build a URL with encoded query parameters."""
     return f"{base_url}?{urlencode(params)}"
 
-def _random_user_agent() -> str:
-    tmpl = random.choice(USER_AGENTS)
-    ver  = random.choice(CHROME_VERSIONS)
-    return tmpl.format(ver=ver)
-
-def _random_window_size() -> str:
+def _random_window_size():
     w, h = random.choice(WINDOW_SIZES)
-    # Add a tiny jitter (±0-30 px) so the size isn’t *exactly* the same every time
-    w += random.randint(-15, 15)
-    h += random.randint(-15, 15)
-    return f"{w},{h}"
+    w += random.randint(-20, 20)
+    h += random.randint(-20, 20)
+    return (w, h)
 
-def create_driver(headless: bool = False):
-    """Create and return a Selenium WebDriver instance."""
-    options = uc.ChromeOptions()
-    if headless:
-        options.add_argument("--headless=new")
-        
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument("--disable-site-isolation-trials")
+# -----------------------------
+# Playwright CDP ATTACH (async)
+# -----------------------------
+@dataclass
+class CDPSession:
+    playwright: Playwright
+    browser: Browser
+    context: BrowserContext
 
-    options.add_argument(f"--window-size={_random_window_size()}")
-    options.add_argument(f"user-agent={_random_user_agent()}")
+async def create_browser_cdp(cdp_url: str = "http://localhost:9222", context_index: int = 0) -> CDPSession:
+    """
+    Connect to an existing Chrome instance via CDP and return a session object.
+    - cdp_url: URL where Chrome is exposing remote debugging (default http://localhost:9222).
+    - context_index: if Chrome has contexts, use the indexed one (default 0). If none exist, a new context is created.
+    """
+    playwright = await async_playwright().start()
+    # connect_over_cdp will not launch a browser; it connects to an existing Chrome
+    browser = await playwright.chromium.connect_over_cdp(cdp_url)
 
+    contexts = browser.contexts
+    if contexts and len(contexts) > context_index:
+        context = contexts[context_index]
+    else:
+        # create a new context to isolate pages created by the scraper
+        context = await browser.new_context()
 
-    #  binary paths inside the container
-    #chrome_path = os.getenv("CHROMIUM_PATH", "/usr/bin/chromium")
-    #driver_path = os.getenv("CHROMEDRIVER_PATH", "/usr/bin/chromedriver")
+    return CDPSession(playwright=playwright, browser=browser, context=context)
 
-    #options.binary_location = chrome_path
-    #service = Service(driver_path)
-
-    driver = uc.Chrome(options=options, headless=headless)
-    return driver
+async def close_cdp_session(session: CDPSession, detach_only: bool = True):
+    """
+    Cleanly release Playwright resources. If detach_only is True we disconnect the Playwright Browser
+    object without terminating the real Chrome process. If False, Playwright will attempt to close the
+    connection which may have different side effects.
+    """
+    try:
+        if detach_only:
+            # Disconnect the Playwright connection without killing the remote browser process
+            await session.detach() # type: ignore
+        else:
+            # Close will attempt to close the remote browser connection
+            await session.browser.close()
+    except Exception:
+        pass
+    try:
+        await session.playwright.stop()
+    except Exception:
+        pass

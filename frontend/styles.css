@@ -81,6 +81,20 @@ h2.card-title {
     min-height: 46px;
 }
 
+.form-select:hover {
+    cursor: pointer;
+}
+
+
+/* ========================================
+   FILTER PANEL
+   ======================================== */
+
+.filter-panel {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
 .filter-panel .filter-toggle {
     display: flex;
     align-items: center;
@@ -89,12 +103,26 @@ h2.card-title {
     font-weight: 600;
 }
 
+.filter-toggle.open {
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+}
+
 .filter-controls {
     padding: 1.2rem;
     background: rgba(240, 245, 255, 0.6);
-    border-radius: 12px;
-    border: 1px dashed #b8c5d6;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.2);
+
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
 }
+
+.filter-panel .form-control,
+.filter-panel .form-select,
+.filter-panel .input-group-text {
+    height: 48px;
+}
+
 
 /* ========================================
    FAB WITH LABEL
@@ -184,6 +212,12 @@ h2.card-title {
     margin: 0;
     width: 100%;
     box-sizing: border-box;
+}
+
+.job-table tbody {
+    border: 1px solid var(--border);
+    border-radius: 0 0 12px 12px;
+    overflow: hidden;
 }
 
 .job-table th,
@@ -330,6 +364,11 @@ h2.card-title {
     border-radius: 6px;
     accent-color: var(--accent);
     box-shadow: 0 0 0 2px #fff, 0 0 0 5px rgba(0, 115, 177, .25);
+}
+
+.job-table td.checkbox-cell input.form-check-input:hover {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 7px rgba(0, 115, 177, .35);
+    cursor: pointer;
 }
 
 

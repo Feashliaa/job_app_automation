@@ -7,7 +7,7 @@ env_vars = load_env_variables()
 USERNAME = env_vars["SQL_USER"]
 PASSWORD = env_vars["SQL_PASSWORD"]
 HOST = "localhost"
-PORT = 3308
+PORT = 3306
 DATABASE = "jobs"
 
 # SQLAlchemy connection URL

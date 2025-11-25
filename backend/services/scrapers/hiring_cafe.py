@@ -1,15 +1,14 @@
-# backend/services/hiring_cafe.py
 import json
 import urllib.parse
 import re
+import asyncio
+import random
 from datetime import datetime
-from selenium.webdriver.common.by import By
 from backend.services.scrapers.base_scraper import BaseScraper
 
 class HiringCafeScraper(BaseScraper):
 
     JOB_CARD_SELECTOR = "div.relative.xl\\:z-10"
-
     BASE_URL = "https://hiring.cafe/"
 
     DATE_POSTED_MAP = {
@@ -39,22 +38,16 @@ class HiringCafeScraper(BaseScraper):
     }
 
     def _build_search_url(self, date_posted, experience_level, job_title, location):
-        # Map inputs to values or provide fallbacks
         date_posted_val = self.DATE_POSTED_MAP.get(date_posted, 14)
         exp_val = self.EXPERIENCE_LEVEL_MAP.get(experience_level, "Entry Level")
 
-        # if typed job title not in map, auto-generate token
         if job_title in self.JOB_TITLE_QUERY_MAP:
             job_val = self.JOB_TITLE_QUERY_MAP[job_title]
         else:
             job_val = urllib.parse.quote_plus(job_title.strip().lower())
 
-        # Determine workplace type
-        workplace_type = (
-            ["Remote"] if "remote" in location.lower() else [location.title()]
-        )
+        workplace_type = ["Remote"] if "remote" in location.lower() else [location.title()]
 
-        # Build the JSON search state
         search_state = {
             "dateFetchedPastNDays": date_posted_val,
             "searchQuery": job_val,
@@ -62,93 +55,91 @@ class HiringCafeScraper(BaseScraper):
             "seniorityLevel": [exp_val],
         }
 
-        # URL-encode the JSON
         encoded_state = urllib.parse.quote(json.dumps(search_state))
-
         return f"{self.BASE_URL}?searchState={encoded_state}"
 
-    def _scrape_logic(
-        self, url, job_title, location, date_posted, experience_level
-    ):  # core scraping logic
-        self._go_to_url(url)
+    async def _scrape_logic(self, url, job_title, location, date_posted, experience_level):
 
-        # Wait for job postings to load
-        self._wait_for_elements(HiringCafeScraper.JOB_CARD_SELECTOR)
+        await self._go_to_url(url)
 
-        # Extract job cards using the appropriate selector
-        job_cards = self.driver.find_elements(
-            By.CSS_SELECTOR, HiringCafeScraper.JOB_CARD_SELECTOR
-        )
+        # Wait for job cards
+        job_cards = await self._wait_for_elements(self.JOB_CARD_SELECTOR)
+
+        if not isinstance(job_cards, list):
+            job_cards = [job_cards]
 
         print(f"Found {len(job_cards)} job postings.")
 
         results = []
+
         for card in job_cards:
+            # TITLE
             try:
-                title = card.find_element(
-                    By.CSS_SELECTOR, "span.font-bold.text-start"
-                ).text
-            except:
+                title_el = await card.query_selector("span.font-bold.text-start")
+                title_text = await title_el.text_content() if title_el else ""
+                title = title_text.strip() if title_text else "N/A"
+            except Exception:
                 title = "N/A"
+
+            # COMPANY
             try:
-                company = card.find_element(
-                    By.CSS_SELECTOR, "span.line-clamp-3.font-light span.font-bold"
-                ).text
-                # Remove trailing colon, e.g. "Navigant: " → "Navigant"
-                company = company.rstrip(":").strip()
-            except:
+                company_el = await card.query_selector("span.line-clamp-3.font-light span.font-bold")
+                company_text = await company_el.text_content() if company_el else ""
+                company = company_text.strip().rstrip(":").strip() if company_text else "N/A"
+            except Exception:
                 company = "N/A"
+
+            # LINK
             try:
-                link = card.find_element(
-                    By.CSS_SELECTOR, "a[href*='viewjob']"
-                ).get_attribute("href")
-            except:
+                link_el = await card.query_selector("a[href*='viewjob']")
+                link = await link_el.get_attribute("href") if link_el else "N/A"
+                # If relative link, make absolute
+                if link and link.startswith("/"):
+                    link = urllib.parse.urljoin(self.BASE_URL, link)
+            except Exception:
                 link = "N/A"
 
+            # SALARY
             salary = None
             try:
-                spans = card.find_elements(
-                    By.XPATH, ".//div[contains(@class, 'flex-wrap')]/span"
-                )
+                spans = await card.query_selector_all("div.flex-wrap span")
                 for s in spans:
-                    text = s.text.strip()
+                    text = await s.text_content() or ""
+                    text = text.strip()
                     if re.search(r"\$\s*\d", text):
                         salary = text
                         break
-            except Exception as e:
-                print(f"Salary extraction error: {e}")
+            except Exception:
                 salary = None
 
+            # SKILLS
             try:
-                skills = card.find_element(
-                    By.CSS_SELECTOR,
-                    "div.flex.flex-col.space-y-1 span.line-clamp-2.font-light",
-                ).text
-            except:
+                skills_el = await card.query_selector("div.flex.flex-col.space-y-1 span.line-clamp-2.font-light")
+                skills_text = await skills_el.text_content() if skills_el else ""
+                skills = skills_text.strip() if skills_text else "N/A"
+            except Exception:
                 skills = "N/A"
 
-            results.append(
-                {
-                    "JobTitle": title,
-                    "Company": company,
-                    "Location": location,
-                    "Salary": salary,
-                    "URL": link,
-                    "Skills": skills,
-                    "Status": "New",
-                    "DateFound": datetime.today().date().isoformat(),
-                }
-            )
+            results.append({
+                "JobTitle": title,
+                "Company": company,
+                "Location": location,
+                "Salary": salary,
+                "URL": link,
+                "Skills": skills,
+                "Status": "New",
+                "DateFound": datetime.today().date().isoformat(),
+            })
 
             print(f"Parsed: {title} | {company} | {skills[:60]} | {salary}")
 
-        print(f"\nExtracted {len(results)} jobs:")
+            await asyncio.sleep(0.1 + random.random() * 0.2)
 
-        print(f"Total jobs before filtering: {len(results)}")
-
+        print(f"\nExtracted {len(results)} jobs.")
         return results
 
-    def scrape(self, date_posted, experience_level, job_title, location):
+    async def scrape(self, date_posted, experience_level, job_title, location, cdp_url: str = "http://localhost:9222"):
+        """Public async entry point."""
         print(
             f"[Hiring Cafe] Scraping '{job_title}' in '{location}' "
             f"({experience_level}, {date_posted})"
@@ -157,8 +148,10 @@ class HiringCafeScraper(BaseScraper):
         url = self._build_search_url(date_posted, experience_level, job_title, location)
         print(f"[Hiring Cafe] URL: {url}")
 
-        results = self._scrape_logic(
+        # ensure browser/page is started and attached to real Chrome
+        if not self.page:
+            await self.start(cdp_url=cdp_url)
+
+        return await self._scrape_logic(
             url, job_title, location, date_posted, experience_level
         )
-
-        return results

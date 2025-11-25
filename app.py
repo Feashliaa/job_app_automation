@@ -6,6 +6,7 @@ from datetime import datetime
 from pdfminer.high_level import extract_text
 import os
 import re
+import asyncio
 from backend.db.db_config import SessionLocal, engine, Base
 from backend.db.models import (
     Job_Query,
@@ -66,7 +67,7 @@ def add_job_request():
         # get and parse user's resume
         parsed_resume = get_user_parsed_resume(db, user_email)
         scrape_params = extract_scrape_params(job_data)
-        scraped_jobs = run_scraper(**scrape_params)
+        scraped_jobs = asyncio.run(run_scraper(**scrape_params))
 
         query = create_job_query(db, job_data)
         db.flush()  # ensure query_id exists before use
